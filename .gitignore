@@ -1,0 +1,4 @@
+lean-circuit/build
+lean-circuit/lean-packages/*
+lean-circuit/lake-packages/*
+!lean-circuit/lean-packages/manifest.json
