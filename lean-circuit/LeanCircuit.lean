@@ -1,14 +1,11 @@
-import ProvenZk.Binary
 import ProvenZk.Gates
-import ProvenZk.Hash
-import ProvenZk.Merkle
 import ProvenZk.VectorExtensions
+
+namespace Circuit
 
 def Order : ℕ := 21888242871839275222246405745257275088548364400416034343698204186575808495617
 variable [Fact (Nat.Prime Order)]
 abbrev F := ZMod Order
-
-namespace Circuit
 
 def DummyPoseidon1 (In: F) (k: F -> Prop): Prop :=
     ∃gate_0, gate_0 = Gates.mul In In ∧

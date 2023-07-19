@@ -1,6 +1,12 @@
+import ProvenZk.Binary
+import ProvenZk.Hash
+import ProvenZk.Merkle
+
 import LeanCircuit
 
+abbrev Order := Circuit.Order
 variable [Fact (Nat.Prime Order)]
+abbrev F := Circuit.F
 
 def nat_to_dir : Nat -> Dir
     | 0 => Dir.right
