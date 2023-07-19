@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -115,50 +114,50 @@ func TestSemaphore() (string, error) {
 	}
 	if len(assignment.TreePathIndices) != len(assignment.TreeSiblings) {
 		panic("TreePathIndices and TreeSiblings must have the same length.")
-	} 
+	}
 	return extractor.CircuitToLean(&assignment, ecc.BN254)
 }
 
 func main() {
 	var out_file string
 
-    app := &cli.App{
-        Name:  "gnark-lean-demo",
-        Usage: "gnark to lean circuit extractor",
-        Commands: []*cli.Command{
-            {
-                Name:    "extract-circuit",
-                Aliases: []string{"e"},
-                Usage:   "Extract circuit to file",
-		        Flags: []cli.Flag{
-		            &cli.StringFlag{
-		                Name: "out",
-		                Usage: "Load configuration from `FILE`",
-		                Required: true,
-		                Destination: &out_file,
-		            },
-		        },
-		        Action: func(cCtx *cli.Context) error {
-		        	circuit_string, err := TestSemaphore()
-				    if err != nil {
-				        log.Fatal(err)
-				    }
-			    	absPath, _ := filepath.Abs(out_file)
+	app := &cli.App{
+		Name:  "gnark-lean-demo",
+		Usage: "gnark to lean circuit extractor",
+		Commands: []*cli.Command{
+			{
+				Name:    "extract-circuit",
+				Aliases: []string{"e"},
+				Usage:   "Extract circuit to file",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "out",
+						Usage:       "Load configuration from `FILE`",
+						Required:    true,
+						Destination: &out_file,
+					},
+				},
+				Action: func(cCtx *cli.Context) error {
+					circuit_string, err := TestSemaphore()
+					if err != nil {
+						log.Fatal(err)
+					}
+					absPath, _ := filepath.Abs(out_file)
 					err = os.MkdirAll(filepath.Dir(absPath), 0750)
 					if err != nil && !os.IsExist(err) {
 						log.Fatal(err)
 					}
-				    err = os.WriteFile(absPath, []byte(circuit_string), 0644)
-				    if err != nil {
-				        log.Fatal(err)
-				    }
-		            return nil
-		        },
-            },
-        },
-    }
+					err = os.WriteFile(absPath, []byte(circuit_string), 0644)
+					if err != nil {
+						log.Fatal(err)
+					}
+					return nil
+				},
+			},
+		},
+	}
 
-    if err := app.Run(os.Args); err != nil {
-        log.Fatal(err)
-    }
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
 }
