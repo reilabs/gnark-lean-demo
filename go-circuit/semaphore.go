@@ -143,11 +143,11 @@ func main() {
 						log.Fatal(err)
 					}
 					absPath, _ := filepath.Abs(out_file)
-					err = os.MkdirAll(filepath.Dir(absPath), 0750)
+					err = os.MkdirAll(filepath.Dir(absPath), 0666)
 					if err != nil && !os.IsExist(err) {
 						log.Fatal(err)
 					}
-					err = os.WriteFile(absPath, []byte(circuit_string), 0644)
+					err = os.WriteFile(absPath, []byte(circuit_string), 0666)
 					if err != nil {
 						log.Fatal(err)
 					}
