@@ -25,9 +25,6 @@ def nullifier_hash {F: Type} (H₂: Hash F 2) (IdentityNullifier: F) (ExternalNu
 def dummy_hash₁ : Hash F 1 := fun a => a[0] * a[0]
 def dummy_hash₂ : Hash F 2 := fun a => a[0] * a[1]
 
-theorem symmetry_prop {a b : F} (h : a = b) : b = a := by
-    rw [Eq.symm h]
-
 theorem same_hash_same_identity (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ : F)
     [Fact (perfect_hash dummy_hash₂)]
     [Fact (perfect_hash dummy_hash₁)]:
@@ -95,7 +92,7 @@ theorem signaller_is_in_tree
                                                                    (MerkleTree.item_at Tree (create_dir_vec Path))]
     intro h
     cases h
-    apply symmetry_prop
+    apply Eq.symm
     assumption
 
 theorem no_double_signal_with_same_commitment
@@ -112,21 +109,13 @@ theorem no_double_signal_with_same_commitment
     rw [circuit_simplified IdentityNullifier₁ IdentityTrapdoor₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ Path₁ Proof₁]
     rw [circuit_simplified IdentityNullifier₂ IdentityTrapdoor₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ Path₂ Proof₂]
     unfold circuit_simpl
-    intro h₁
-    intro h₂
-    intro h₃
-    intro h₄
+    intro h₁ h₂ h₃ h₄
     cases h₁
-    rename_i hr₁
-    rename_i hl₁
+    rename_i hl₁ hr₁
     cases h₂
-    rename_i hr₂
-    rename_i hl₂
-    rw [hl₂]
-    rw [hl₁]
+    rename_i hl₂ hr₂ 
+    rw [hl₂, hl₁]
     rw [same_hash_same_identity] at h₄
     cases h₄
-    rename_i hr₄
-    rename_i hl₄
-    rw [h₃]
-    rw [hl₄]
+    rename_i hl₄ hr₄
+    rw [h₃, hl₄]

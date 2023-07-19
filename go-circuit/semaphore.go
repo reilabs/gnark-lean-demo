@@ -71,7 +71,7 @@ type Semaphore struct {
 	NullifierHash frontend.Variable `gnark:",public"`
 	MTRoot        frontend.Variable `gnark:",public"`
 
-	// Working values
+	// Parameters
 	Levels int
 }
 
