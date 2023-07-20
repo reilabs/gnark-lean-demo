@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
 go mod download
-go run go-circuit/semaphore.go > lean-circuit/GnarkLeanDemo.lean
+go build -v ./...
+go-circuit extract-circuit --out=lean-circuit/LeanCircuit.lean

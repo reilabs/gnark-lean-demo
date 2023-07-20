@@ -1,12 +1,17 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+
 	"github.com/reilabs/gnark-extractor/abstractor"
 	"github.com/reilabs/gnark-extractor/extractor"
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/frontend"
+
+	"github.com/urfave/cli/v2"
 )
 
 // Example: Semaphore circuit with dummy Poseidon hash
@@ -66,7 +71,7 @@ type Semaphore struct {
 	NullifierHash frontend.Variable `gnark:",public"`
 	MTRoot        frontend.Variable `gnark:",public"`
 
-	// Working values
+	// Parameters
 	Levels int
 }
 
@@ -100,7 +105,7 @@ func (circuit Semaphore) Define(api frontend.API) error {
 	return abstractor.Concretize(api, &circuit)
 }
 
-func TestSemaphore() {
+func TestSemaphore() (string, error) {
 	nLevels := 3
 	assignment := Semaphore{
 		Levels:          nLevels,
@@ -109,14 +114,50 @@ func TestSemaphore() {
 	}
 	if len(assignment.TreePathIndices) != len(assignment.TreeSiblings) {
 		panic("TreePathIndices and TreeSiblings must have the same length.")
-	} 
-	err := extractor.CircuitToLean(&assignment, ecc.BN254)
-	if err != nil {
-		fmt.Println("CircuitToLean error!")
-		fmt.Println(err.Error())
 	}
+	return extractor.CircuitToLean(&assignment, ecc.BN254)
 }
 
 func main() {
-	TestSemaphore()
+	var out_file string
+
+	app := &cli.App{
+		Name:  "gnark-lean-demo",
+		Usage: "gnark to lean circuit extractor",
+		Commands: []*cli.Command{
+			{
+				Name:    "extract-circuit",
+				Aliases: []string{"e"},
+				Usage:   "Extract circuit to file",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "out",
+						Usage:       "Load configuration from `FILE`",
+						Required:    true,
+						Destination: &out_file,
+					},
+				},
+				Action: func(cCtx *cli.Context) error {
+					circuit_string, err := TestSemaphore()
+					if err != nil {
+						log.Fatal(err)
+					}
+					absPath, _ := filepath.Abs(out_file)
+					err = os.MkdirAll(filepath.Dir(absPath), 0666)
+					if err != nil && !os.IsExist(err) {
+						log.Fatal(err)
+					}
+					err = os.WriteFile(absPath, []byte(circuit_string), 0666)
+					if err != nil {
+						log.Fatal(err)
+					}
+					return nil
+				},
+			},
+		},
+	}
+
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
 }
