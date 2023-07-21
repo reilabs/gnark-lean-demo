@@ -1,18 +1,18 @@
 import ProvenZk.Gates
 import ProvenZk.VectorExtensions
 
-namespace Circuit
+namespace Semaphore
 
-def Order : ℕ := 21888242871839275222246405745257275088548364400416034343698204186575808495617
+def Order : ℕ := 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
 variable [Fact (Nat.Prime Order)]
 abbrev F := ZMod Order
 
-def DummyPoseidon1 (In: F) (k: F -> Prop): Prop :=
-    ∃gate_0, gate_0 = Gates.mul In In ∧
-    k gate_0
-
 def DummyPoseidon2 (In_1: F) (In_2: F) (k: F -> Prop): Prop :=
     ∃gate_0, gate_0 = Gates.mul In_1 In_2 ∧
+    k gate_0
+
+def DummyPoseidon1 (In: F) (k: F -> Prop): Prop :=
+    ∃gate_0, gate_0 = Gates.mul In In ∧
     k gate_0
 
 def MerkleTreeInclusionProof_3_3 (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop): Prop :=
@@ -40,4 +40,4 @@ def circuit (IdentityNullifier: F) (IdentityTrapdoor: F) (TreePathIndices: Vecto
     ∃_ignored_, _ignored_ = Gates.mul SignalHash SignalHash ∧
     True
 
-end Circuit
+end Semaphore

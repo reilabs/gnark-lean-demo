@@ -41,8 +41,6 @@ type MerkleTreeInclusionProof struct {
 }
 
 func (gadget MerkleTreeInclusionProof) DefineGadget(api abstractor.API) []frontend.Variable {
-	dummy_poseidon := api.DefineGadget(&DummyPoseidon2{})
-
 	levels := len(gadget.PathIndices)
 	hashes := make([]frontend.Variable, levels+1)
 
@@ -50,8 +48,8 @@ func (gadget MerkleTreeInclusionProof) DefineGadget(api abstractor.API) []fronte
 	for i := 0; i < levels; i++ {
 		// Unrolled merkle_tree_inclusion_proof
 		api.AssertIsBoolean(gadget.PathIndices[i])
-		leftHash := dummy_poseidon.Call(DummyPoseidon2{hashes[i], gadget.Siblings[i]})[0]
-		rightHash := dummy_poseidon.Call(DummyPoseidon2{gadget.Siblings[i], hashes[i]})[0]
+		leftHash := api.Call(DummyPoseidon2{hashes[i], gadget.Siblings[i]})[0]
+		rightHash := api.Call(DummyPoseidon2{gadget.Siblings[i], hashes[i]})[0]
 		hashes[i+1] = api.Select(gadget.PathIndices[i], rightHash, leftHash)
 	}
 	root := hashes[levels]
@@ -77,19 +75,13 @@ type Semaphore struct {
 
 func (circuit *Semaphore) AbsDefine(api abstractor.API) error {
 	// From https://github.com/semaphore-protocol/semaphore/blob/main/packages/circuits/semaphore.circom
-	dummy_poseidon_1 := api.DefineGadget(&DummyPoseidon1{})
-	dummy_poseidon_2 := api.DefineGadget(&DummyPoseidon2{})
-	merkle_tree_inclusion_proof := api.DefineGadget(&MerkleTreeInclusionProof{
-		PathIndices: make([]frontend.Variable, circuit.Levels),
-		Siblings:    make([]frontend.Variable, circuit.Levels),
-	})
 
-	secret := dummy_poseidon_2.Call(DummyPoseidon2{circuit.IdentityNullifier, circuit.IdentityTrapdoor})[0]
-	identity_commitment := dummy_poseidon_1.Call(DummyPoseidon1{secret})[0]
-	nullifierHash := dummy_poseidon_2.Call(DummyPoseidon2{circuit.ExternalNullifier, circuit.IdentityNullifier})[0]
+	secret := api.Call(DummyPoseidon2{circuit.IdentityNullifier, circuit.IdentityTrapdoor})[0]
+	identity_commitment := api.Call(DummyPoseidon1{secret})[0]
+	nullifierHash := api.Call(DummyPoseidon2{circuit.ExternalNullifier, circuit.IdentityNullifier})[0]
 	api.AssertIsEqual(nullifierHash, circuit.NullifierHash) // Verify
 
-	root := merkle_tree_inclusion_proof.Call(MerkleTreeInclusionProof{
+	root := api.Call(MerkleTreeInclusionProof{
 		Leaf:        identity_commitment,
 		PathIndices: circuit.TreePathIndices,
 		Siblings:    circuit.TreeSiblings,
