@@ -15,15 +15,15 @@ import (
 )
 
 // Example: Semaphore circuit with dummy Poseidon hash
-type DummyPoseidon2 struct {
-	In_1 frontend.Variable
-	In_2 frontend.Variable
-}
+// type DummyPoseidon2 struct {
+// 	In_1 frontend.Variable
+// 	In_2 frontend.Variable
+// }
 
-func (gadget DummyPoseidon2) DefineGadget(api abstractor.API) []frontend.Variable {
-	hash := api.Mul(gadget.In_1, gadget.In_2)
-	return []frontend.Variable{hash}
-}
+// func (gadget DummyPoseidon2) DefineGadget(api abstractor.API) []frontend.Variable {
+// 	hash := api.Mul(gadget.In_1, gadget.In_2)
+// 	return []frontend.Variable{hash}
+// }
 
 type DummyPoseidon1 struct {
 	In frontend.Variable
@@ -48,8 +48,8 @@ func (gadget MerkleTreeInclusionProof) DefineGadget(api abstractor.API) []fronte
 	for i := 0; i < levels; i++ {
 		// Unrolled merkle_tree_inclusion_proof
 		api.AssertIsBoolean(gadget.PathIndices[i])
-		leftHash := api.Call(DummyPoseidon2{hashes[i], gadget.Siblings[i]})[0]
-		rightHash := api.Call(DummyPoseidon2{gadget.Siblings[i], hashes[i]})[0]
+		leftHash := api.Call(Poseidon{hashes[i], gadget.Siblings[i]})[0]
+		rightHash := api.Call(Poseidon{gadget.Siblings[i], hashes[i]})[0]
 		hashes[i+1] = api.Select(gadget.PathIndices[i], rightHash, leftHash)
 	}
 	root := hashes[levels]
@@ -76,9 +76,9 @@ type Semaphore struct {
 func (circuit *Semaphore) AbsDefine(api abstractor.API) error {
 	// From https://github.com/semaphore-protocol/semaphore/blob/main/packages/circuits/semaphore.circom
 
-	secret := api.Call(DummyPoseidon2{circuit.IdentityNullifier, circuit.IdentityTrapdoor})[0]
+	secret := api.Call(Poseidon{circuit.IdentityNullifier, circuit.IdentityTrapdoor})[0]
 	identity_commitment := api.Call(DummyPoseidon1{secret})[0]
-	nullifierHash := api.Call(DummyPoseidon2{circuit.ExternalNullifier, circuit.IdentityNullifier})[0]
+	nullifierHash := api.Call(Poseidon{circuit.ExternalNullifier, circuit.IdentityNullifier})[0]
 	api.AssertIsEqual(nullifierHash, circuit.NullifierHash) // Verify
 
 	root := api.Call(MerkleTreeInclusionProof{

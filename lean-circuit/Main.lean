@@ -4,9 +4,9 @@ import ProvenZk.Merkle
 
 import LeanCircuit
 
-abbrev Order := Circuit.Order
+abbrev Order := Semaphore.Order
 variable [Fact (Nat.Prime Order)]
-abbrev F := Circuit.F
+abbrev F := Semaphore.F
 
 def nat_to_dir : Nat -> Dir
     | 0 => Dir.right
