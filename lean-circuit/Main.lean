@@ -16,8 +16,11 @@ def nat_to_dir : Nat -> Dir
 def create_dir_vec {depth} (ix: Vector F depth) : Vector Dir depth :=
     Vector.map nat_to_dir (Vector.map ZMod.val ix)
 
+def secret {F: Type} (H₂: Hash F 2) (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
+    H₂ vec![IdentityNullifier, IdentityTrapdoor]
+
 def identity_commitment {F: Type} (H₁: Hash F 1) (H₂: Hash F 2) (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
-    H₁ vec![H₂ vec![IdentityNullifier, IdentityTrapdoor]]
+    H₁ vec![(secret H₂ IdentityNullifier IdentityTrapdoor)]
 
 def nullifier_hash {F: Type} (H₂: Hash F 2) (IdentityNullifier: F) (ExternalNullifier: F) : F :=
     H₂ vec![ExternalNullifier, IdentityNullifier]
@@ -29,8 +32,25 @@ theorem same_hash_same_identity (IdentityNullifier₁ IdentityNullifier₂ Ident
     [Fact (perfect_hash dummy_hash₂)]
     [Fact (perfect_hash dummy_hash₁)]:
     identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentityTrapdoor₂ ↔
-    (IdentityNullifier₁ = IdentityNullifier₂ ∧ IdentityTrapdoor₁ = IdentityTrapdoor₂) :=
-    by sorry
+    (IdentityNullifier₁ = IdentityNullifier₂ ∧ IdentityTrapdoor₁ = IdentityTrapdoor₂) := by
+    apply Iff.intro
+    case mp => {
+        intro h
+        unfold identity_commitment at h
+        have inps_same₁ := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash dummy_hash₁)) h)
+        simp at inps_same₁
+        unfold secret at inps_same₁
+        have inps_same₂ := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash dummy_hash₂)) inps_same₁)
+        simp at inps_same₂
+        assumption
+    }
+    case mpr => {
+        intro h
+        cases h
+        rename_i h₁ h₂
+        rw [h₁]
+        rw [h₂]
+    }
 
 def circuit_simpl (H₁: Hash F 1) (H₂: Hash F 2) (IdentityNullifier IdentityTrapdoor _ ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F 3): Prop :=
     NullifierHash = nullifier_hash H₂ ExternalNullifier IdentityNullifier ∧
