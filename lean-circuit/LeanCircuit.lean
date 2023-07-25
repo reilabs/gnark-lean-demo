@@ -1,5 +1,5 @@
 import ProvenZk.Gates
-import ProvenZk.VectorExtensions
+import ProvenZk.Ext.Vector
 
 namespace Semaphore
 
