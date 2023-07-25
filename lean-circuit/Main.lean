@@ -37,11 +37,14 @@ theorem same_hash_same_identity (IdentityNullifier₁ IdentityNullifier₂ Ident
     case mp => {
         intro h
         unfold identity_commitment at h
-        have inps_same₁ := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash dummy_hash₁)) h)
-        simp at inps_same₁
+
+        have inps_same₁ := Fact.elim (inferInstance : Fact (perfect_hash dummy_hash₁)) h
+        have := congrArg Vector.head inps_same₁
+
         unfold secret at inps_same₁
-        have inps_same₂ := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash dummy_hash₂)) inps_same₁)
-        simp at inps_same₂
+        have inps_same₂ := Fact.elim (inferInstance : Fact (perfect_hash dummy_hash₂)) inps_same₁
+        have := congrArg Vector.head inps_same₂
+        have := congrArg (Vector.head ∘ Vector.tail) inps_same₂
         assumption
     }
     case mpr => {
