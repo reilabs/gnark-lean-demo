@@ -3,6 +3,8 @@ import ProvenZk.Hash
 import ProvenZk.Merkle
 
 import LeanCircuit
+import LeanCircuit.Poseidon.Spec
+import LeanCircuit.Poseidon.Correctness
 
 abbrev Order := Semaphore.Order
 variable [Fact (Nat.Prime Order)]
@@ -13,66 +15,48 @@ def nat_to_dir : Nat -> Dir
     | 1 => Dir.left
     | Nat.succ (Nat.succ _) => panic "Dir can be 0 or 1"
 
+def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
+def poseidon₂ : Hash F 2 := fun a => (Poseidon.perm Constants.x5_254_3 vec![0, a.get 0, a.get 1]).get 0
+
 def create_dir_vec {depth} (ix: Vector F depth) : Vector Dir depth :=
     Vector.map nat_to_dir (Vector.map ZMod.val ix)
 
-def secret {F: Type} (H₂: Hash F 2) (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
-    H₂ vec![IdentityNullifier, IdentityTrapdoor]
+abbrev secret (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
+    poseidon₂ vec![IdentityNullifier, IdentityTrapdoor]
 
-def identity_commitment {F: Type} (H₁: Hash F 1) (H₂: Hash F 2) (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
-    H₁ vec![(secret H₂ IdentityNullifier IdentityTrapdoor)]
+abbrev identity_commitment (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
+    poseidon₁ vec![(secret IdentityNullifier IdentityTrapdoor)]
 
-def nullifier_hash {F: Type} (H₂: Hash F 2) (IdentityNullifier: F) (ExternalNullifier: F) : F :=
-    H₂ vec![ExternalNullifier, IdentityNullifier]
-
-def dummy_hash₁ : Hash F 1 := fun a => a[0] * a[0]
-def dummy_hash₂ : Hash F 2 := fun a => a[0] * a[1]
+abbrev nullifier_hash (IdentityNullifier: F) (ExternalNullifier: F) : F :=
+    poseidon₂ vec![ExternalNullifier, IdentityNullifier]
 
 theorem same_hash_same_identity (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ : F)
-    [Fact (perfect_hash dummy_hash₂)]
-    [Fact (perfect_hash dummy_hash₁)]:
-    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentityTrapdoor₂ ↔
+    [Fact (perfect_hash poseidon₂)]
+    [Fact (perfect_hash poseidon₁)]:
+    identity_commitment IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment IdentityNullifier₂ IdentityTrapdoor₂ ↔
     (IdentityNullifier₁ = IdentityNullifier₂ ∧ IdentityTrapdoor₁ = IdentityTrapdoor₂) := by
     apply Iff.intro
     case mp => {
         intro h
-        unfold identity_commitment at h
-
-        have inps_same₁ := Fact.elim (inferInstance : Fact (perfect_hash dummy_hash₁)) h
-        have inps_same₁ := congrArg Vector.head inps_same₁
-
-        unfold secret at inps_same₁
-        have inps_same₂ := Fact.elim (inferInstance : Fact (perfect_hash dummy_hash₂)) inps_same₁
-        have h₁ := congrArg Vector.head inps_same₂
-        have h₂ := congrArg (Vector.head ∘ Vector.tail) inps_same₂
-        simp at h₁
-        simp at h₂
-        rw [h₁]
-        rw [h₂]
-        simp
+        simp [Vector.eq_cons_iff] at h
+        assumption
     }
-    case mpr => {
-        intro h
-        cases h
-        rename_i h₁ h₂
-        rw [h₁]
-        rw [h₂]
-    }
+    case mpr => { intro h; simp [h] }
 
-def circuit_simpl (H₁: Hash F 1) (H₂: Hash F 2) (IdentityNullifier IdentityTrapdoor _ ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F 3): Prop :=
-    NullifierHash = nullifier_hash H₂ ExternalNullifier IdentityNullifier ∧
-    MerkleTree.recover H₂ (create_dir_vec Path) Proof (identity_commitment H₁ H₂ IdentityNullifier IdentityTrapdoor) = Root
+def circuit_simpl (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F 3): Prop :=
+    NullifierHash = nullifier_hash ExternalNullifier IdentityNullifier ∧
+    MerkleTree.recover poseidon₂ (create_dir_vec Path) Proof (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
 
 lemma circuit_simplified {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F 3}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
-    circuit_simpl dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root Path Proof := by
+    circuit_simpl IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root Path Proof := by
     sorry
 
 theorem always_possible_to_signal
     (IdentityNullifier IdentitityTrapdoor SignalHash ExtNullifier : F)
-    (Tree : MerkleTree F dummy_hash₂ 3)
+    (Tree : MerkleTree F poseidon₂ 3)
     (Path : Vector F 3)
-    (comm_in_tree : Tree.item_at (create_dir_vec Path) = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentitityTrapdoor)
+    (comm_in_tree : Tree.item_at (create_dir_vec Path) = identity_commitment IdentityNullifier IdentitityTrapdoor)
     :
     Semaphore.circuit
         IdentityNullifier
@@ -81,15 +65,15 @@ theorem always_possible_to_signal
         (Tree.proof (create_dir_vec Path)) -- Siblings
         SignalHash
         ExtNullifier
-        (nullifier_hash dummy_hash₂ ExtNullifier IdentityNullifier) -- NullifierHash
+        (nullifier_hash ExtNullifier IdentityNullifier) -- NullifierHash
         Tree.root := by
         rw [circuit_simplified]
-        rw [<-MerkleTree.recover_proof_is_root _ (create_dir_vec Path) Tree]
+        rw [←MerkleTree.recover_proof_is_root]
         rw [comm_in_tree]
         unfold circuit_simpl
         simp
 
-theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash : F) (Path Proof: Vector F 3) (Tree : MerkleTree F dummy_hash₂ 3) 
+theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash : F) (Path Proof: Vector F 3) (Tree : MerkleTree F dummy_hash₂ 3)
     [Fact (perfect_hash dummy_hash₂)]:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Tree.root =
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path (MerkleTree.proof Tree (create_dir_vec Path)) SignalHash ExternalNullifier NullifierHash Tree.root := by
@@ -103,46 +87,33 @@ theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNul
 
 theorem signaller_is_in_tree
     (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F)
-    (Tree : MerkleTree F dummy_hash₂ 3)
+    (Tree : MerkleTree F poseidon₂ 3)
     (Path Proof: Vector F 3)
-    [Fact (perfect_hash dummy_hash₂)]
+    [Fact (perfect_hash poseidon₂)]
     :
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
-    Tree.item_at (create_dir_vec Path) = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor := by
-    rw [circuit_proof IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash Path Proof Tree]
-    rw [circuit_simplified]
+    Tree.item_at (create_dir_vec Path) = identity_commitment IdentityNullifier IdentityTrapdoor := by
+    rw [circuit_proof, circuit_simplified]
     unfold circuit_simpl
-    rw [<-MerkleTree.recover_proof_is_root _ (create_dir_vec Path) Tree]
-    let path := create_dir_vec Path
-    let proof := MerkleTree.proof Tree (create_dir_vec Path)
-    rw [MerkleTree.equal_recover_equal_tree dummy_hash₂ path proof (identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor)
-                                                                   (MerkleTree.item_at Tree (create_dir_vec Path))]
+    rw [←MerkleTree.recover_proof_is_root, MerkleTree.equal_recover_equal_tree]
     intro h
-    cases h
-    apply Eq.symm
-    assumption
+    simp [*]
 
 theorem no_double_signal_with_same_commitment
     (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
     (Path₁ Proof₁ Path₂ Proof₂: Vector F 3)
-    [Fact (perfect_hash dummy_hash₂)]
-    [Fact (perfect_hash dummy_hash₁)]
+    [Fact (perfect_hash poseidon₁)]
+    [Fact (perfect_hash poseidon₂)]
     :
     Semaphore.circuit IdentityNullifier₁ IdentityTrapdoor₁ Path₁ Proof₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ →
     Semaphore.circuit IdentityNullifier₂ IdentityTrapdoor₂ Path₂ Proof₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ →
     ExtNullifier₁ = ExtNullifier₂ →
-    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentityTrapdoor₂ →
+    identity_commitment IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment IdentityNullifier₂ IdentityTrapdoor₂ →
     NullifierHash₁ = NullifierHash₂ := by
-    rw [circuit_simplified]
-    rw [circuit_simplified]
-    unfold circuit_simpl
-    intro h₁ h₂ h₃ h₄
-    cases h₁
-    rename_i hl₁ hr₁
-    cases h₂
-    rename_i hl₂ hr₂ 
-    rw [hl₂, hl₁]
-    rw [same_hash_same_identity] at h₄
-    cases h₄
-    rename_i hl₄ hr₄
-    rw [h₃, hl₄]
+    simp [circuit_simplified, circuit_simpl]
+    intro _ _ _ _ _ idCommEq
+    simp [secret, Vector.eq_cons_iff] at idCommEq
+    simp [*]
+
+def main : IO Unit := do
+    IO.println "Hello, world!"
