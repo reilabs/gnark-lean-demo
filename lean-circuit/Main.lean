@@ -73,18 +73,6 @@ theorem always_possible_to_signal
         unfold circuit_simpl
         simp
 
-theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash : F) (Path Proof: Vector F 3) (Tree : MerkleTree F dummy_hash₂ 3)
-    [Fact (perfect_hash dummy_hash₂)]:
-    Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Tree.root =
-    Semaphore.circuit IdentityNullifier IdentityTrapdoor Path (MerkleTree.proof Tree (create_dir_vec Path)) SignalHash ExternalNullifier NullifierHash Tree.root := by
-    rw [circuit_simplified]
-    rw [circuit_simplified]
-    unfold circuit_simpl
-    simp
-    intro
-    rw [MerkleTree.same_root_same_proof]
-    simp
-
 theorem signaller_is_in_tree
     (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F)
     (Tree : MerkleTree F poseidon₂ 3)
@@ -93,11 +81,12 @@ theorem signaller_is_in_tree
     :
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
     Tree.item_at (create_dir_vec Path) = identity_commitment IdentityNullifier IdentityTrapdoor := by
-    rw [circuit_proof, circuit_simplified]
-    unfold circuit_simpl
-    rw [←MerkleTree.recover_proof_is_root, MerkleTree.equal_recover_equal_tree]
+    rw [circuit_simplified]
     intro h
-    simp [*]
+    unfold circuit_simpl at h
+    cases h
+    rw [<-MerkleTree.proof_ceritfies_item (create_dir_vec Path) Tree Proof (identity_commitment IdentityNullifier IdentityTrapdoor)]
+    assumption
 
 theorem no_double_signal_with_same_commitment
     (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
