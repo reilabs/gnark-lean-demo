@@ -47,13 +47,13 @@ def circuit_simpl (IdentityNullifier IdentityTrapdoor ExternalNullifier Nullifie
     NullifierHash = nullifier_hash ExternalNullifier IdentityNullifier ∧
     MerkleTree.recover poseidon₂ (create_dir_vec Path) Proof (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
 
-def merkle_tree_recover_round (path : F) (node : F) (sibling : F) : F := match nat_to_dir path.val with
-    | Dir.left => poseidon₂ vec![node, sibling]
-    | Dir.right => poseidon₂ vec![sibling, node]
+-- def merkle_tree_recover_round (path : F) (node : F) (sibling : F) : F := match nat_to_dir path.val with
+--     | Dir.left => poseidon₂ vec![node, sibling]
+--     | Dir.right => poseidon₂ vec![sibling, node]
 
-theorem merkle_recover_round_correct (Direction: F) (Hash: F) (Sibling: F) (k: F -> Prop) : 
-    Semaphore.MerkleTreeRecoverRound Direction Hash Sibling k = k (merkle_tree_recover_round Direction Hash Sibling) := by
-    sorry
+-- theorem merkle_recover_round_correct (Direction: F) (Hash: F) (Sibling: F) (k: F -> Prop) : 
+--     Semaphore.MerkleTreeRecoverRound Direction Hash Sibling k = k (merkle_tree_recover_round Direction Hash Sibling) := by
+--     sorry
 
 def merkle_tree_recover_rounds_cps (merkle_tree_recover_round : F -> F -> F -> (F -> Prop) -> Prop) (Leaf : F) (PathIndices Siblings : Vector F n) (k : F -> Prop) : Prop := match n with
     | Nat.zero => k Leaf
