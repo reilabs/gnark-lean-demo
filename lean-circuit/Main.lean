@@ -57,13 +57,14 @@ theorem merkle_recover_correct (Leaf: F) (PathIndices: Vector F 3) (Siblings: Ve
   Semaphore.MerkleTreeInclusionProof_3_3 Leaf PathIndices Siblings k = k (MerkleTree.recover poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
     unfold Semaphore.MerkleTreeInclusionProof_3_3
     unfold MerkleTree.recover
+    unfold Semaphore.MerkleTreeRecoverRound
     unfold Semaphore.Poseidon2
     simp [poseidon_3_correct]
     unfold poseidon₂
     simp [get_vec_0]
     simp [get_vec_1]
     simp [head_is_get]
-
+    
     sorry
 
 lemma circuit_simplified {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F 3}:

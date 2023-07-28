@@ -221,20 +221,18 @@ def Poseidon1 (In: F) (k: F -> Prop): Prop :=
     poseidon_2 vec![0, In] fun gate_0 =>
     k gate_0[0]
 
+def MerkleTreeRecoverRound (Direction: F) (Hash: F) (Sibling: F) (k: F -> Prop): Prop :=
+    Gates.is_bool Direction ∧
+    Poseidon2 Hash Sibling fun gate_1 =>
+    Poseidon2 Sibling Hash fun gate_2 =>
+    ∃gate_3, Gates.select Direction gate_2 gate_1 gate_3 ∧
+    k gate_3
+
 def MerkleTreeInclusionProof_3_3 (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop): Prop :=
-    Gates.is_bool PathIndices[0] ∧
-    Poseidon2 Leaf Siblings[0] fun gate_1 =>
-    Poseidon2 Siblings[0] Leaf fun gate_2 =>
-    ∃gate_3, Gates.select PathIndices[0] gate_2 gate_1 gate_3 ∧
-    Gates.is_bool PathIndices[1] ∧
-    Poseidon2 gate_3 Siblings[1] fun gate_5 =>
-    Poseidon2 Siblings[1] gate_3 fun gate_6 =>
-    ∃gate_7, Gates.select PathIndices[1] gate_6 gate_5 gate_7 ∧
-    Gates.is_bool PathIndices[2] ∧
-    Poseidon2 gate_7 Siblings[2] fun gate_9 =>
-    Poseidon2 Siblings[2] gate_7 fun gate_10 =>
-    ∃gate_11, Gates.select PathIndices[2] gate_10 gate_9 gate_11 ∧
-    k gate_11
+    MerkleTreeRecoverRound PathIndices[0] Leaf Siblings[0] fun gate_0 =>
+    MerkleTreeRecoverRound PathIndices[1] gate_0 Siblings[1] fun gate_1 =>
+    MerkleTreeRecoverRound PathIndices[2] gate_1 Siblings[2] fun gate_2 =>
+    k gate_2
 
 def circuit (IdentityNullifier: F) (IdentityTrapdoor: F) (TreePathIndices: Vector F 3) (TreeSiblings: Vector F 3) (SignalHash: F) (ExternalNullifier: F) (NullifierHash: F) (MTRoot: F): Prop :=
     Poseidon2 IdentityNullifier IdentityTrapdoor fun gate_0 =>
