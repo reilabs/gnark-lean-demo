@@ -49,12 +49,33 @@ def circuit_simpl (IdentityNullifier IdentityTrapdoor ExternalNullifier Nullifie
 lemma get_vec_0 {d : Nat} {a : Vector α (Nat.succ d)} : (Vector.get a 0) = a[0] := by rfl
 lemma get_vec_1 {d : Nat} {a : Vector α (Nat.succ (Nat.succ d))} : (Vector.get a 1) = a[1] := by rfl
 
-lemma head_is_get {d : Nat} {v : Vector α (Nat.succ d)} : (Vector.head v) = v[0] := by sorry
-
 lemma replace_get_1 {a b : F} : (Vector.get vec![a, b] 1) = b := by rfl
+
+def calculate_root_hash (path : Dir) (node : F) (sibling : F) : F := match path with
+    | Dir.left => poseidon₂ vec![node, sibling]
+    | Dir.right => poseidon₂ vec![sibling, node]
+
+theorem merkle_recover_round_correct (Direction: F) (Hash: F) (Sibling: F) (k: F -> Prop) : 
+    Semaphore.MerkleTreeRecoverRound Direction Hash Sibling k = k (calculate_root_hash (nat_to_dir Direction.val) Hash Sibling) := by
+    sorry
+
+-- def recover_for {depth : Nat} (H : Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := Id.run do
+--     let mut root := item
+--     for i in [0:depth] do
+--         root := calculate_root_hash ix[i]! root (proof[i]!)
+--     root
+
+theorem looped_merkle_tree_inclusion_proof (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop) : Prop :=
+    sorry
+
+theorem merkle_recover_go (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop):
+    Semaphore.MerkleTreeInclusionProof_3_3 Leaf PathIndices Siblings k = looped_merkle_tree_inclusion_proof Leaf PathIndices Siblings k := by
+    sorry
 
 theorem merkle_recover_correct (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop):
   Semaphore.MerkleTreeInclusionProof_3_3 Leaf PathIndices Siblings k = k (MerkleTree.recover poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
+    --simp [merkle_recover_go]
+
     unfold Semaphore.MerkleTreeInclusionProof_3_3
     unfold MerkleTree.recover
     unfold Semaphore.MerkleTreeRecoverRound
@@ -63,58 +84,34 @@ theorem merkle_recover_correct (Leaf: F) (PathIndices: Vector F 3) (Siblings: Ve
     unfold poseidon₂
     simp [get_vec_0]
     simp [get_vec_1]
-    simp [head_is_get]
+    
     
     sorry
 
 lemma circuit_simplified {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F 3}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
     circuit_simpl IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root Path Proof := by
-    unfold Semaphore.circuit
-    unfold circuit_simpl
-    unfold Semaphore.Poseidon2
-    unfold Semaphore.Poseidon1
-    unfold nullifier_hash
-    unfold identity_commitment
-    unfold secret
-    unfold poseidon₂
-    unfold poseidon₁
-    unfold Gates.eq
-    simp [poseidon_3_correct, poseidon_2_correct, merkle_recover_correct]
-    unfold poseidon₂
-    simp [poseidon_2_correct, fold_vec_3]
-    apply Iff.intro
-    case _ => {
+    simp [
+        Semaphore.circuit,
+        circuit_simpl,
+        Semaphore.Poseidon2,
+        Semaphore.Poseidon1,
+        nullifier_hash,
+        identity_commitment,
+        secret, poseidon₂,
+        poseidon₁,
+        Gates.eq,
+        poseidon_3_correct,
+        poseidon_2_correct,
+        merkle_recover_correct,
+        fold_vec_3
+    ]
+    apply Iff.intro <;> {
         intro h
         cases h
-        rename_i h₁ h₂
-        apply And.intro
-        case _ => {
-            rw [<-h₁]
-            simp [replace_get_1, head_is_get]
-            rfl
-        }
-        case _ => {
-            rw [<-h₂]
-            simp [replace_get_1, head_is_get]
-            rfl
-        }
-    }
-    case _ => {
-        intro h
-        cases h
-        rename_i h₁ h₂
-        apply And.intro
-        case _ => {
-            rw [h₁]
-            simp [replace_get_1, head_is_get]
-            rfl
-        }
-        case _ => {
-            rw [<-h₂]
-            simp [replace_get_1, head_is_get]
-            rfl
-        }
+        subst_vars
+        simp [getElem]
+        tauto
     }
 
 theorem always_possible_to_signal

@@ -79,7 +79,7 @@ lemma mds_3_uncps (S : Vector F 3) (k : Vector F 3 -> Prop):
   repeat (
     apply congrArg₂
     {
-      simp [Vector.getElem_get, Matrix.of, Matrix.mul, Matrix.dotProduct]
+      simp [getElem, Matrix.of, Matrix.mul, Matrix.dotProduct]
       simp [Finset.sum, Finset.univ, Fintype.elems]
       rw [←add_assoc]
       conv => lhs; simp [mul_comm]
@@ -96,7 +96,7 @@ lemma mds_2_uncps (S : Vector F 2) (k : Vector F 2 -> Prop):
   repeat (
     apply congrArg₂
     {
-      simp [Vector.getElem_get, Matrix.of, Matrix.mul, Matrix.dotProduct]
+      simp [getElem, Matrix.of, Matrix.mul, Matrix.dotProduct]
       simp [Finset.sum, Finset.univ, Fintype.elems]
       conv => lhs; simp [mul_comm]
     }
