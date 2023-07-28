@@ -47,11 +47,6 @@ def circuit_simpl (IdentityNullifier IdentityTrapdoor ExternalNullifier Nullifie
     NullifierHash = nullifier_hash ExternalNullifier IdentityNullifier ∧
     MerkleTree.recover poseidon₂ (create_dir_vec Path) Proof (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
 
-lemma get_vec_0 {d : Nat} {a : Vector α (Nat.succ d)} : (Vector.get a 0) = a[0] := by rfl
-lemma get_vec_1 {d : Nat} {a : Vector α (Nat.succ (Nat.succ d))} : (Vector.get a 1) = a[1] := by rfl
-
-lemma replace_get_1 {a b : F} : (Vector.get vec![a, b] 1) = b := by rfl
-
 def merkle_tree_recover_round (path : F) (node : F) (sibling : F) : F := match nat_to_dir path.val with
     | Dir.left => poseidon₂ vec![node, sibling]
     | Dir.right => poseidon₂ vec![sibling, node]
@@ -66,6 +61,27 @@ def merkle_tree_recover_rounds_cps (merkle_tree_recover_round : F -> F -> F -> (
         merkle_tree_recover_round PathIndices.head Leaf Siblings.head fun next =>
             merkle_tree_recover_rounds_cps merkle_tree_recover_round next PathIndices.tail Siblings.tail k
 
+theorem merkle_tree_recover_rounds_uncps
+    {Leaf : F}
+    {PathIndices Siblings : Vector F n}
+    {k : F -> Prop} 
+    {merkle_tree_recover_round_cps : F -> F -> F -> (F -> Prop) -> Prop}
+    -- {merkle_tree_recover_round_uncps : ∀ Leaf PathIndices Siblings k, merkle_tree_recover_round_cps Leaf PathIndices Siblings k = k (merkle_tree_recover_round Leaf PathIndices Siblings)}
+    : 
+    merkle_tree_recover_rounds_cps merkle_tree_recover_round_cps Leaf PathIndices Siblings k = k (MerkleTree.recover poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
+    induction n with
+    | zero => 
+        unfold merkle_tree_recover_rounds_cps
+        unfold MerkleTree.recover
+        rfl
+    | succ _ ih =>
+        unfold merkle_tree_recover_rounds_cps
+        simp [<-MerkleTree.recover_tail_reverse_equals_recover]
+        unfold MerkleTree.recover_tail
+        simp
+        
+        sorry
+
 def looped_merkle_tree_inclusion_proof (Leaf: F) (PathIndices: Vector F n) (Siblings: Vector F n) (k: F -> Prop): Prop :=
     merkle_tree_recover_rounds_cps Semaphore.MerkleTreeRecoverRound Leaf PathIndices Siblings k
 
@@ -74,14 +90,16 @@ theorem looped_merkle_tree_inclusion_proof_go (Leaf: F) (PathIndices: Vector F 3
     unfold Semaphore.MerkleTreeInclusionProof_3_3
     unfold looped_merkle_tree_inclusion_proof
     simp [merkle_tree_recover_rounds_cps]
-    
-    sorry
+    simp [merkle_tree_recover_rounds_cps]
+    rw [←Vector.ofFn_get (v := PathIndices)]
+    rw [←Vector.ofFn_get (v := Siblings)]
+    rfl
 
 theorem merkle_tree_inclusion_proof_correct (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop):
   Semaphore.MerkleTreeInclusionProof_3_3 Leaf PathIndices Siblings k = k (MerkleTree.recover poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
     simp [looped_merkle_tree_inclusion_proof_go]
-    simp [looped_merkle_tree_inclusion_proof]  
-    sorry
+    simp [looped_merkle_tree_inclusion_proof]
+    simp [merkle_tree_recover_rounds_uncps]
 
 lemma circuit_simplified {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F 3}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
