@@ -10,15 +10,16 @@ abbrev Order := Semaphore.Order
 variable [Fact (Nat.Prime Order)]
 abbrev F := Semaphore.F
 
-def nat_to_dir : Fin 2 -> Dir
+def nat_to_dir : Nat -> Dir
     | 0 => Dir.right
     | 1 => Dir.left
+    | Nat.succ (Nat.succ _) => panic "Dir can be 0 or 1"
 
 def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
 def poseidon₂ : Hash F 2 := fun a => (Poseidon.perm Constants.x5_254_3 vec![0, a.get 0, a.get 1]).get 0
 
 def create_dir_vec {depth} (ix: Vector F depth) : Vector Dir depth :=
-    Vector.map nat_to_dir (Vector.map (fun v => v.val) ix)
+    Vector.map nat_to_dir (Vector.map ZMod.val ix)
 
 abbrev secret (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
     poseidon₂ vec![IdentityNullifier, IdentityTrapdoor]
@@ -51,41 +52,35 @@ lemma get_vec_1 {d : Nat} {a : Vector α (Nat.succ (Nat.succ d))} : (Vector.get 
 
 lemma replace_get_1 {a b : F} : (Vector.get vec![a, b] 1) = b := by rfl
 
-def calculate_root_hash (path : Dir) (node : F) (sibling : F) : F := match path with
+def merkle_tree_recover_round (path : F) (node : F) (sibling : F) : F := match nat_to_dir path.val with
     | Dir.left => poseidon₂ vec![node, sibling]
     | Dir.right => poseidon₂ vec![sibling, node]
 
 theorem merkle_recover_round_correct (Direction: F) (Hash: F) (Sibling: F) (k: F -> Prop) : 
-    Semaphore.MerkleTreeRecoverRound Direction Hash Sibling k = k (calculate_root_hash (nat_to_dir Direction.val) Hash Sibling) := by
+    Semaphore.MerkleTreeRecoverRound Direction Hash Sibling k = k (merkle_tree_recover_round Direction Hash Sibling) := by
     sorry
 
--- def recover_for {depth : Nat} (H : Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := Id.run do
---     let mut root := item
---     for i in [0:depth] do
---         root := calculate_root_hash ix[i]! root (proof[i]!)
---     root
+def merkle_tree_recover_rounds_cps (merkle_tree_recover_round : F -> F -> F -> (F -> Prop) -> Prop) (Leaf : F) (PathIndices Siblings : Vector F n) (k : F -> Prop) : Prop := match n with
+    | Nat.zero => k Leaf
+    | Nat.succ _ => 
+        merkle_tree_recover_round PathIndices.head Leaf Siblings.head fun next =>
+            merkle_tree_recover_rounds_cps merkle_tree_recover_round next PathIndices.tail Siblings.tail k
 
-theorem looped_merkle_tree_inclusion_proof (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop) : Prop :=
-    sorry
+def looped_merkle_tree_inclusion_proof (Leaf: F) (PathIndices: Vector F n) (Siblings: Vector F n) (k: F -> Prop): Prop :=
+    merkle_tree_recover_rounds_cps Semaphore.MerkleTreeRecoverRound Leaf PathIndices Siblings k
 
-theorem merkle_recover_go (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop):
+theorem looped_merkle_tree_inclusion_proof_go (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop):
     Semaphore.MerkleTreeInclusionProof_3_3 Leaf PathIndices Siblings k = looped_merkle_tree_inclusion_proof Leaf PathIndices Siblings k := by
+    unfold Semaphore.MerkleTreeInclusionProof_3_3
+    unfold looped_merkle_tree_inclusion_proof
+    simp [merkle_tree_recover_rounds_cps]
+    
     sorry
 
-theorem merkle_recover_correct (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop):
+theorem merkle_tree_inclusion_proof_correct (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop):
   Semaphore.MerkleTreeInclusionProof_3_3 Leaf PathIndices Siblings k = k (MerkleTree.recover poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
-    --simp [merkle_recover_go]
-
-    unfold Semaphore.MerkleTreeInclusionProof_3_3
-    unfold MerkleTree.recover
-    unfold Semaphore.MerkleTreeRecoverRound
-    unfold Semaphore.Poseidon2
-    simp [poseidon_3_correct]
-    unfold poseidon₂
-    simp [get_vec_0]
-    simp [get_vec_1]
-    
-    
+    simp [looped_merkle_tree_inclusion_proof_go]
+    simp [looped_merkle_tree_inclusion_proof]  
     sorry
 
 lemma circuit_simplified {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F 3}:
@@ -103,7 +98,7 @@ lemma circuit_simplified {IdentityNullifier IdentityTrapdoor SignalHash External
         Gates.eq,
         poseidon_3_correct,
         poseidon_2_correct,
-        merkle_recover_correct,
+        merkle_tree_inclusion_proof_correct,
         fold_vec_3
     ]
     apply Iff.intro <;> {
