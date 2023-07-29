@@ -1,0 +1,43 @@
+name: Build
+on: push
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Install Elan
+      run: |
+        curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y -v --default-toolchain leanprover/lean4:nightly-2023-07-12
+        echo "LAKE_VERSION=$(~/.elan/bin/lake --version)" >> $GITHUB_ENV
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: lake-packages
+        key: "${{ env.LAKE_VERSION }}"
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: './go.mod'
+    - name: Go Format
+      run: gofmt -s -w . && git diff --exit-code
+    - name: Go Vet
+      run: go vet ./...
+    - name: Go Tidy
+      run: go mod tidy && git diff --exit-code
+    - name: Go Mod
+      run: go mod download
+    - name: Go Mod Verify
+      run: go mod verify
+    - name: Build
+      run: go build -v ./...
+    - name: Export circuit
+      run: go-circuit extract-circuit --out=lean-circuit/LeanCircuit.lean
+    - name: Build lean project
+      run: |
+        cd lean-circuit
+        ~/.elan/bin/lake build
