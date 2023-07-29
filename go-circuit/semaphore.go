@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/reilabs/gnark-extractor/abstractor"
-	"github.com/reilabs/gnark-extractor/extractor"
+	"github.com/reilabs/gnark-lean-extractor/abstractor"
+	"github.com/reilabs/gnark-lean-extractor/extractor"
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/frontend"

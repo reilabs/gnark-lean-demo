@@ -5,11 +5,11 @@ go 1.20
 require (
 	github.com/consensys/gnark v0.8.0
 	github.com/consensys/gnark-crypto v0.9.1
-	github.com/reilabs/gnark-extractor v0.0.0
+	github.com/reilabs/gnark-lean-extractor v0.0.0
 	github.com/urfave/cli/v2 v2.25.7
 )
 
-replace github.com/reilabs/gnark-extractor => ../gnark-extractor
+replace github.com/reilabs/gnark-lean-extractor => ../gnark-lean-extractor
 
 require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
