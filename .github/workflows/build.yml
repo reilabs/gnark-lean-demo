@@ -19,6 +19,10 @@ jobs:
       with:
         path: lake-packages
         key: "${{ env.LAKE_VERSION }}"
+    - name: Get private libraries
+      run: |
+        git clone https://github.com/reilabs/proven-zk.git ../proven-zk
+        git clone https://github.com/reilabs/gnark-lean-extractor.git ../gnark-lean-extractor
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
