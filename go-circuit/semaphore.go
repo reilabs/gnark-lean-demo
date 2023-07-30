@@ -14,6 +14,20 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+type MerkleTreeRecoverRound struct {
+	Direction frontend.Variable
+	Hash      frontend.Variable
+	Sibling   frontend.Variable
+}
+
+func (gadget MerkleTreeRecoverRound) DefineGadget(api abstractor.API) []frontend.Variable {
+	api.AssertIsBoolean(gadget.Direction)
+	leftHash := api.Call(Poseidon2{gadget.Hash, gadget.Sibling})[0]
+	rightHash := api.Call(Poseidon2{gadget.Sibling, gadget.Hash})[0]
+	parent_hash := api.Select(gadget.Direction, rightHash, leftHash)
+	return []frontend.Variable{parent_hash}
+}
+
 type MerkleTreeInclusionProof struct {
 	Leaf        frontend.Variable
 	PathIndices []frontend.Variable
@@ -26,11 +40,7 @@ func (gadget MerkleTreeInclusionProof) DefineGadget(api abstractor.API) []fronte
 
 	hashes[0] = gadget.Leaf
 	for i := 0; i < levels; i++ {
-		// Unrolled merkle_tree_inclusion_proof
-		api.AssertIsBoolean(gadget.PathIndices[i])
-		leftHash := api.Call(Poseidon2{hashes[i], gadget.Siblings[i]})[0]
-		rightHash := api.Call(Poseidon2{gadget.Siblings[i], hashes[i]})[0]
-		hashes[i+1] = api.Select(gadget.PathIndices[i], rightHash, leftHash)
+		hashes[i+1] = api.Call(MerkleTreeRecoverRound{gadget.PathIndices[i], hashes[i], gadget.Siblings[i]})[0]
 	}
 	root := hashes[levels]
 	return []frontend.Variable{root}
