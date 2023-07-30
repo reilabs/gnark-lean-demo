@@ -5,8 +5,9 @@ import Mathlib
 import ProvenZk
 
 open Matrix
-private abbrev F := Semaphore.F
-variable [Fact (Nat.Prime Semaphore.Order)]
+open Semaphore (F Order)
+
+variable [Fact (Nat.Prime Order)]
 
 private lemma iff_to_eq {α} {a b: α} {k : α -> Prop }: a = b -> (k a ↔ k b) := by intro eq; rw [eq]
 
