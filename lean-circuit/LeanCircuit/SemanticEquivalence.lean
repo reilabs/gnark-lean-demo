@@ -10,6 +10,8 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
+abbrev D := 20
+
 def nat_to_dir : Nat -> Dir
   | 0 => Dir.left
   | 1 => Dir.right
@@ -142,18 +144,18 @@ lemma merkle_tree_recover_rounds_uncps
     intros
     rfl
 
-lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop):
-    Semaphore.MerkleTreeInclusionProof_3_3 Leaf PathIndices Siblings k =
+lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F D) (Siblings: Vector F D) (k: F -> Prop):
+    Semaphore.MerkleTreeInclusionProof_20_20 Leaf PathIndices Siblings k =
       merkle_tree_recover_rounds Leaf PathIndices Siblings k := by
-    unfold Semaphore.MerkleTreeInclusionProof_3_3
+    unfold Semaphore.MerkleTreeInclusionProof_20_20
     simp [merkle_tree_recover_rounds]
     simp [merkle_tree_recover_rounds]
     rw [←Vector.ofFn_get (v := PathIndices)]
     rw [←Vector.ofFn_get (v := Siblings)]
     rfl
 
-lemma MerkleTreeInclusionProof_3_3_uncps {Leaf : F} {PathIndices Siblings : Vector F 3} {k : F -> Prop}:
-    Semaphore.MerkleTreeInclusionProof_3_3 Leaf PathIndices Siblings k ↔
+lemma MerkleTreeInclusionProof_20_20_uncps {Leaf : F} {PathIndices Siblings : Vector F D} {k : F -> Prop}:
+    Semaphore.MerkleTreeInclusionProof_20_20 Leaf PathIndices Siblings k ↔
     is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
     simp [MerkleTreeInclusionProof_looped, merkle_tree_recover_rounds_uncps]
 
@@ -166,12 +168,12 @@ abbrev identity_commitment (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
 abbrev nullifier_hash (ExternalNullifier: F) (IdentityNullifier: F) : F :=
   poseidon₂ vec![ExternalNullifier, IdentityNullifier]
 
-def circuit_sem (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F 3): Prop :=
+def circuit_sem (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F D): Prop :=
     NullifierHash = nullifier_hash ExternalNullifier IdentityNullifier ∧
     is_vector_binary Path ∧
     MerkleTree.recover poseidon₂ (create_dir_vec Path).reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
 
-theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F 3}:
+theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F D}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
     circuit_sem IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root Path Proof := by
     simp [
@@ -179,17 +181,34 @@ theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash Externa
       Semaphore.circuit,
       Poseidon2_uncps,
       Poseidon1_uncps,
-      MerkleTreeInclusionProof_3_3_uncps,
+      MerkleTreeInclusionProof_20_20_uncps,
       Gates.eq,
       nullifier_hash,
-      create_dir_vec
+      create_dir_vec,
+      ←MerkleTree.recover_tail_reverse_equals_recover
     ]
-    apply Iff.intro <;> {
-      intro h
-      cases h; rename_i _ r
-      cases r
-      subst_vars
-      rw [←Vector.ofFn_get (v := Path)] at *
+    apply Iff.intro
+    case mp =>
+      intros
+      casesm* (_ ∧ _)
+      rw [←Vector.ofFn_get (v := Path)]
       rw [←Vector.ofFn_get (v := Proof)]
-      tauto
-    }
+      subst_vars
+      apply And.intro
+      {rfl}
+      apply And.intro
+      {assumption}
+      {rfl}
+    case mpr =>
+      intro h
+      cases h; rename_i h₁ h₂
+      cases h₂; rename_i h₂ h₃
+      rw [←Vector.ofFn_get (v := Path)] at h₂
+      rw [←Vector.ofFn_get (v := Path)] at h₃
+      rw [←Vector.ofFn_get (v := Proof)] at h₃
+      subst_vars
+      apply And.intro
+      {rfl}
+      apply And.intro
+      assumption
+      {rfl}

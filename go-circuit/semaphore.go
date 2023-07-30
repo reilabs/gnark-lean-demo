@@ -88,7 +88,7 @@ func (circuit Semaphore) Define(api frontend.API) error {
 }
 
 func TestSemaphore() (string, error) {
-	nLevels := 3
+	nLevels := 20
 	assignment := Semaphore{
 		Levels:          nLevels,
 		TreePathIndices: make([]frontend.Variable, nLevels),
