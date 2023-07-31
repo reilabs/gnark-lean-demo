@@ -3,8 +3,6 @@ import ProvenZk.Hash
 import ProvenZk.Merkle
 
 import LeanCircuit
-import LeanCircuit.Poseidon.Spec
-import LeanCircuit.Poseidon.Correctness
 import LeanCircuit.SemanticEquivalence
 
 open Semaphore (F Order)
@@ -13,8 +11,8 @@ variable [Fact (Nat.Prime Order)]
 
 theorem always_possible_to_signal
   (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier : F)
-  (Tree : MerkleTree F poseidon₂ 3)
-  (Path : Vector Dir 3)
+  (Tree : MerkleTree F poseidon₂ 20)
+  (Path : Vector Dir 20)
   (commitment_in_tree : Tree.item_at Path = identity_commitment IdentityNullifier IdentityTrapdoor)
   :
   Semaphore.circuit
@@ -33,8 +31,8 @@ theorem always_possible_to_signal
 
 theorem signaller_is_in_tree
     (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F)
-    (Tree : MerkleTree F poseidon₂ 3)
-    (Path Proof: Vector F 3)
+    (Tree : MerkleTree F poseidon₂ 20)
+    (Path Proof: Vector F 20)
     [Fact (perfect_hash poseidon₂)]
     :
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
@@ -46,7 +44,7 @@ theorem signaller_is_in_tree
 
 theorem no_double_signal_with_same_commitment
     (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
-    (Path₁ Proof₁ Path₂ Proof₂: Vector F 3)
+    (Path₁ Proof₁ Path₂ Proof₂: Vector F 20)
     [Fact (perfect_hash poseidon₁)]
     [Fact (perfect_hash poseidon₂)]
     :
