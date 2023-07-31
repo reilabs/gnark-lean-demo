@@ -1,7 +1,6 @@
 import ProvenZk.Binary
 import ProvenZk.Hash
 import ProvenZk.Merkle
-import ProvenZk.Ext.List
 
 import LeanCircuit
 import LeanCircuit.Poseidon.Spec
@@ -13,11 +12,46 @@ variable [Fact (Nat.Prime Order)]
 
 abbrev D := 20
 
+def embed_dir : Dir -> F
+  | x => Dir.toZMod x
+
+def embed_dir_vector {depth} (ix: Vector Dir depth) : Vector F depth :=
+  Vector.map embed_dir ix
+
+lemma dir_embed_recover {d : Dir} : Dir.nat_to_dir (embed_dir d).val = d := by
+  cases d <;> rfl
+
+@[simp]
+lemma dir_embed_recover_vector {depth} (ix: Vector Dir depth) :
+  create_dir_vec (embed_dir_vector ix) = ix := by
+  simp [create_dir_vec, embed_dir_vector, dir_embed_recover]
+  apply Vector.eq
+  simp
+
+@[simp]
+lemma embed_dir_vector_reverse {depth} (ix : Vector Dir depth) :
+  embed_dir_vector ix.reverse = (embed_dir_vector ix).reverse := by
+  simp [embed_dir_vector]
+  apply Vector.eq
+  simp [Vector.toList_reverse, List.map_reverse]
+
+lemma embed_dir_vector_is_binary {depth} (ix : Vector Dir depth) :
+  is_vector_binary (embed_dir_vector ix) := by
+  simp [is_vector_binary, embed_dir_vector]
+  induction ix using Vector.inductionOn with
+  | h_nil => simp [is_vector_binary]
+  | @h_cons n d ds ih =>
+    simp [is_vector_binary_cons]
+    apply And.intro
+    { simp [embed_dir, is_bit]; cases d <;> simp }
+    { assumption }
+
 def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
-def poseidon₂ : Hash F 2 := fun a => (Poseidon.perm Constants.x5_254_3 vec![0, a.get 0, a.get 1]).get 0
 
 lemma Poseidon1_uncps (a : F) (k : F -> Prop) : Semaphore.Poseidon1 a k ↔ k (poseidon₁ vec![a]) := by
     simp [Semaphore.Poseidon1, poseidon₁, poseidon_2_correct, getElem]
+
+def poseidon₂ : Hash F 2 := fun a => (Poseidon.perm Constants.x5_254_3 vec![0, a.get 0, a.get 1]).get 0
 
 lemma Poseidon2_uncps (a b : F) (k : F -> Prop) : Semaphore.Poseidon2 a b k ↔ k (poseidon₂ vec![a, b]) := by
     simp [Semaphore.Poseidon2, poseidon₂, poseidon_3_correct, getElem]
@@ -47,7 +81,7 @@ lemma merkle_tree_recover_rounds_uncps
   {PathIndices Siblings : Vector F n}
   {k : F -> Prop}:
   merkle_tree_recover_rounds Leaf PathIndices Siblings k ↔
-  is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf) := by
+  is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
   induction PathIndices, Siblings using Vector.inductionOn₂ generalizing Leaf with
   | nil =>
     simp [is_vector_binary]
@@ -70,7 +104,7 @@ lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F D) (Sibli
 
 lemma MerkleTreeInclusionProof_20_20_uncps {Leaf : F} {PathIndices Siblings : Vector F D} {k : F -> Prop}:
     Semaphore.MerkleTreeInclusionProof_20_20 Leaf PathIndices Siblings k ↔
-    is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf) := by
+    is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
     simp [MerkleTreeInclusionProof_looped, merkle_tree_recover_rounds_uncps]
 
 abbrev secret (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
@@ -85,7 +119,7 @@ abbrev nullifier_hash (ExternalNullifier: F) (IdentityNullifier: F) : F :=
 def circuit_sem (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F D): Prop :=
     NullifierHash = nullifier_hash ExternalNullifier IdentityNullifier ∧
     is_vector_binary Path ∧
-    MerkleTree.recover poseidon₂ (Dir.create_dir_vec Path).reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
+    MerkleTree.recover poseidon₂ (create_dir_vec Path).reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
 
 theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F D}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
@@ -98,7 +132,7 @@ theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash Externa
       MerkleTreeInclusionProof_20_20_uncps,
       Gates.eq,
       nullifier_hash,
-      Dir.create_dir_vec,
+      create_dir_vec,
       ←MerkleTree.recover_tail_reverse_equals_recover
     ]
     apply Iff.intro
