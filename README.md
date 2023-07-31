@@ -1,25 +1,41 @@
-# Formal verification of gnark circuits
+<p align=center>
+  <img src="https://user-images.githubusercontent.com/5780639/237803894-e2344067-aa77-488e-b2d0-6f980524dced.svg"/>
+</p>
 
-This repo showcases the use of [gnark-lean-extractor](https://github.com/reilabs/gnark-lean-extractor)
-to prove correctness of a gnark reimplementation of the Semaphore
-protocol circuits.
+# Formal Verification of Gnark Circuits
 
-## Repo structure
+This repository contains an example of using Reilabs'
+[gnark-lean-extractor](https://github.com/reilabs/gnark-lean-extractor) library
+to prove the correctness of a [gnark](https://github.com/ConsenSys/gnark)
+reimplementation of the circuits necessary to implement and operate the
+[Semaphore](https://semaphore.appliedzkp.org) protocol.
 
-The circuit is defined in [semaphore.go](go-circuit/semaphore.go) and is a reimplementation
-of the original circom circuit. It uses the Lean extractor's `AbsDefine` API,
-to mark gadget calls, resulting in very readable code on the Lean side.
-The result of automatic translation can be viewed in [LeanCircuit.lean](lean-circuit/LeanCircuit.lean).
-It can also be regenerated, by running `./go-circuit extract-circuit --out=lean-circuit/LeanCircuit.lean`.
+Under the hood, this repository makes heavy use of Reilabs'
+[proven-zk](https://github.com/reilabs/proven-zk) library. It is a
+[lean](https://leanprover.github.io) library to aid in the formal verification
+of circuits produced by the extractor.
 
-## Verified properties
+For guidelines on how to build these things for yourself, or to contribute to
+the repository, see our [contributing guide](./CONTRIBUTING.md). It also
+contains a guide to the structure of the repository.
 
-The [main Lean file](lean-circuit/Main.lean) contains formulations and proofs of the following properties:
-1. The equivalence of the Poseidon hash implementation to an implementation very closely based
-   on the Poseidon reference implementation. That implementation can be reviewed in [this file](lean-circuit/LeanCircuit/Poseidon/Spec.lean).
-2. No censorship: given the knowledge of secrets relating to an identity and the identity commitment being included in tree,
-   it is always possible to generate a valid proof.
-3. No double signalling: any attempt to signal twice using the same identity commitment will result in the equality of
+## Verified Properties
+
+The [main lean file](lean-circuit/Main.lean) contains formulations and
+accompanying proofs of the following properties for the circuit.
+
+1. **Poseidon Equivalence:** The equivalence of the
+   [Poseidon hash implementation](./go-circuit/poseidon.go) to an
+   [implementation](./lean-circuit/LeanCircuit/Poseidon/Spec.lean) very closely
+   based on the Poseidon
+   [reference implementation](https://extgit.iaik.tugraz.at/krypto/hadeshash).
+2. **No Censorship:** A proof, given knowledge of secrets relating to
+   an identity and that the identity commitment being included in the tree, that
+   it is _always_ possible to generate a valid proof.
+3. **No Double Signalling:** A proof that any attempt to signal twice using the
+   same identity commitment will result in the equality of the corresponding
    nullifier hashes.
-4. No unauthorized signalling: it is not possible to have the circuit accept a proof where the identity commitment
-   is not included in the tree.
+4. **No Unauthorized Signalling:** A proof that it is not possible to have the
+   circuit accept a proof where the identity commitment generating that proof is
+   not already included in the tree of identity commitments.
+
