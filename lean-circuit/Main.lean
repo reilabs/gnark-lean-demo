@@ -36,7 +36,7 @@ theorem signaller_is_in_tree
     [Fact (perfect_hash poseidon₂)]
     :
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
-    Tree.item_at (create_dir_vec Path.reverse) = identity_commitment IdentityNullifier IdentityTrapdoor := by
+    Tree.item_at (Dir.create_dir_vec Path.reverse) = identity_commitment IdentityNullifier IdentityTrapdoor := by
     simp [circuit_semantics, circuit_sem]
     intros
     apply MerkleTree.proof_ceritfies_item

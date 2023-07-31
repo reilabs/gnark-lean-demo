@@ -23,8 +23,8 @@ lemma dir_embed_recover {d : Dir} : Dir.nat_to_dir (embed_dir d).val = d := by
 
 @[simp]
 lemma dir_embed_recover_vector {depth} (ix: Vector Dir depth) :
-  create_dir_vec (embed_dir_vector ix) = ix := by
-  simp [create_dir_vec, embed_dir_vector, dir_embed_recover]
+  Dir.create_dir_vec (embed_dir_vector ix) = ix := by
+  simp [Dir.create_dir_vec, embed_dir_vector, dir_embed_recover]
   apply Vector.eq
   simp
 
@@ -81,7 +81,7 @@ lemma merkle_tree_recover_rounds_uncps
   {PathIndices Siblings : Vector F n}
   {k : F -> Prop}:
   merkle_tree_recover_rounds Leaf PathIndices Siblings k ↔
-  is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
+  is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf) := by
   induction PathIndices, Siblings using Vector.inductionOn₂ generalizing Leaf with
   | nil =>
     simp [is_vector_binary]
@@ -104,7 +104,7 @@ lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F D) (Sibli
 
 lemma MerkleTreeInclusionProof_20_20_uncps {Leaf : F} {PathIndices Siblings : Vector F D} {k : F -> Prop}:
     Semaphore.MerkleTreeInclusionProof_20_20 Leaf PathIndices Siblings k ↔
-    is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (create_dir_vec PathIndices) Siblings Leaf) := by
+    is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf) := by
     simp [MerkleTreeInclusionProof_looped, merkle_tree_recover_rounds_uncps]
 
 abbrev secret (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
@@ -119,7 +119,7 @@ abbrev nullifier_hash (ExternalNullifier: F) (IdentityNullifier: F) : F :=
 def circuit_sem (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F D): Prop :=
     NullifierHash = nullifier_hash ExternalNullifier IdentityNullifier ∧
     is_vector_binary Path ∧
-    MerkleTree.recover poseidon₂ (create_dir_vec Path).reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
+    MerkleTree.recover poseidon₂ (Dir.create_dir_vec Path).reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
 
 theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F D}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
@@ -132,7 +132,7 @@ theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash Externa
       MerkleTreeInclusionProof_20_20_uncps,
       Gates.eq,
       nullifier_hash,
-      create_dir_vec,
+      Dir.create_dir_vec,
       ←MerkleTree.recover_tail_reverse_equals_recover
     ]
     apply Iff.intro
