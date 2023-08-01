@@ -17,7 +17,7 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: lake-packages
+        path: lean-circuit/lake-packages
         key: "${{ env.LAKE_VERSION }}"
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -40,4 +40,5 @@ jobs:
     - name: Build lean project
       run: |
         cd lean-circuit
+        lake exe cache get
         ~/.elan/bin/lake build
