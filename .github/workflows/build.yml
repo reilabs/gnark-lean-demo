@@ -34,9 +34,9 @@ jobs:
     - name: Go Mod Verify
       run: go mod verify
     - name: Build
-      run: go build -v ./...
+      run: go build -o gnark-lean-demo -v ./...
     - name: Export circuit
-      run: go-circuit extract-circuit --out=lean-circuit/LeanCircuit.lean
+      run: gnark-lean-demo extract-circuit --out=lean-circuit/LeanCircuit.lean
     - name: Build lean project
       run: |
         cd lean-circuit
