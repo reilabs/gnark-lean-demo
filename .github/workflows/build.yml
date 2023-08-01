@@ -36,7 +36,7 @@ jobs:
     - name: Build
       run: go build -o gnark-lean-demo -v ./...
     - name: Export circuit
-      run: gnark-lean-demo extract-circuit --out=lean-circuit/LeanCircuit.lean
+      run: bash gnark-lean-demo extract-circuit --out=lean-circuit/LeanCircuit.lean
     - name: Build lean project
       run: |
         cd lean-circuit
