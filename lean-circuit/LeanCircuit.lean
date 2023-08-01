@@ -221,27 +221,42 @@ def Poseidon1 (In: F) (k: F -> Prop): Prop :=
     poseidon_2 vec![0, In] fun gate_0 =>
     k gate_0[0]
 
-def MerkleTreeInclusionProof_3_3 (Leaf: F) (PathIndices: Vector F 3) (Siblings: Vector F 3) (k: F -> Prop): Prop :=
-    Gates.is_bool PathIndices[0] ∧
-    Poseidon2 Leaf Siblings[0] fun gate_1 =>
-    Poseidon2 Siblings[0] Leaf fun gate_2 =>
-    ∃gate_3, Gates.select PathIndices[0] gate_2 gate_1 gate_3 ∧
-    Gates.is_bool PathIndices[1] ∧
-    Poseidon2 gate_3 Siblings[1] fun gate_5 =>
-    Poseidon2 Siblings[1] gate_3 fun gate_6 =>
-    ∃gate_7, Gates.select PathIndices[1] gate_6 gate_5 gate_7 ∧
-    Gates.is_bool PathIndices[2] ∧
-    Poseidon2 gate_7 Siblings[2] fun gate_9 =>
-    Poseidon2 Siblings[2] gate_7 fun gate_10 =>
-    ∃gate_11, Gates.select PathIndices[2] gate_10 gate_9 gate_11 ∧
-    k gate_11
+def MerkleTreeRecoverRound (Direction: F) (Hash: F) (Sibling: F) (k: F -> Prop): Prop :=
+    Gates.is_bool Direction ∧
+    Poseidon2 Hash Sibling fun gate_1 =>
+    Poseidon2 Sibling Hash fun gate_2 =>
+    ∃gate_3, Gates.select Direction gate_2 gate_1 gate_3 ∧
+    k gate_3
 
-def circuit (IdentityNullifier: F) (IdentityTrapdoor: F) (TreePathIndices: Vector F 3) (TreeSiblings: Vector F 3) (SignalHash: F) (ExternalNullifier: F) (NullifierHash: F) (MTRoot: F): Prop :=
+def MerkleTreeInclusionProof_20_20 (Leaf: F) (PathIndices: Vector F 20) (Siblings: Vector F 20) (k: F -> Prop): Prop :=
+    MerkleTreeRecoverRound PathIndices[0] Leaf Siblings[0] fun gate_0 =>
+    MerkleTreeRecoverRound PathIndices[1] gate_0 Siblings[1] fun gate_1 =>
+    MerkleTreeRecoverRound PathIndices[2] gate_1 Siblings[2] fun gate_2 =>
+    MerkleTreeRecoverRound PathIndices[3] gate_2 Siblings[3] fun gate_3 =>
+    MerkleTreeRecoverRound PathIndices[4] gate_3 Siblings[4] fun gate_4 =>
+    MerkleTreeRecoverRound PathIndices[5] gate_4 Siblings[5] fun gate_5 =>
+    MerkleTreeRecoverRound PathIndices[6] gate_5 Siblings[6] fun gate_6 =>
+    MerkleTreeRecoverRound PathIndices[7] gate_6 Siblings[7] fun gate_7 =>
+    MerkleTreeRecoverRound PathIndices[8] gate_7 Siblings[8] fun gate_8 =>
+    MerkleTreeRecoverRound PathIndices[9] gate_8 Siblings[9] fun gate_9 =>
+    MerkleTreeRecoverRound PathIndices[10] gate_9 Siblings[10] fun gate_10 =>
+    MerkleTreeRecoverRound PathIndices[11] gate_10 Siblings[11] fun gate_11 =>
+    MerkleTreeRecoverRound PathIndices[12] gate_11 Siblings[12] fun gate_12 =>
+    MerkleTreeRecoverRound PathIndices[13] gate_12 Siblings[13] fun gate_13 =>
+    MerkleTreeRecoverRound PathIndices[14] gate_13 Siblings[14] fun gate_14 =>
+    MerkleTreeRecoverRound PathIndices[15] gate_14 Siblings[15] fun gate_15 =>
+    MerkleTreeRecoverRound PathIndices[16] gate_15 Siblings[16] fun gate_16 =>
+    MerkleTreeRecoverRound PathIndices[17] gate_16 Siblings[17] fun gate_17 =>
+    MerkleTreeRecoverRound PathIndices[18] gate_17 Siblings[18] fun gate_18 =>
+    MerkleTreeRecoverRound PathIndices[19] gate_18 Siblings[19] fun gate_19 =>
+    k gate_19
+
+def circuit (IdentityNullifier: F) (IdentityTrapdoor: F) (TreePathIndices: Vector F 20) (TreeSiblings: Vector F 20) (SignalHash: F) (ExternalNullifier: F) (NullifierHash: F) (MTRoot: F): Prop :=
     Poseidon2 IdentityNullifier IdentityTrapdoor fun gate_0 =>
     Poseidon1 gate_0 fun gate_1 =>
     Poseidon2 ExternalNullifier IdentityNullifier fun gate_2 =>
     Gates.eq gate_2 NullifierHash ∧
-    MerkleTreeInclusionProof_3_3 gate_1 vec![TreePathIndices[0], TreePathIndices[1], TreePathIndices[2]] vec![TreeSiblings[0], TreeSiblings[1], TreeSiblings[2]] fun gate_4 =>
+    MerkleTreeInclusionProof_20_20 gate_1 vec![TreePathIndices[0], TreePathIndices[1], TreePathIndices[2], TreePathIndices[3], TreePathIndices[4], TreePathIndices[5], TreePathIndices[6], TreePathIndices[7], TreePathIndices[8], TreePathIndices[9], TreePathIndices[10], TreePathIndices[11], TreePathIndices[12], TreePathIndices[13], TreePathIndices[14], TreePathIndices[15], TreePathIndices[16], TreePathIndices[17], TreePathIndices[18], TreePathIndices[19]] vec![TreeSiblings[0], TreeSiblings[1], TreeSiblings[2], TreeSiblings[3], TreeSiblings[4], TreeSiblings[5], TreeSiblings[6], TreeSiblings[7], TreeSiblings[8], TreeSiblings[9], TreeSiblings[10], TreeSiblings[11], TreeSiblings[12], TreeSiblings[13], TreeSiblings[14], TreeSiblings[15], TreeSiblings[16], TreeSiblings[17], TreeSiblings[18], TreeSiblings[19]] fun gate_4 =>
     Gates.eq gate_4 MTRoot ∧
     ∃_ignored_, _ignored_ = Gates.mul SignalHash SignalHash ∧
     True
