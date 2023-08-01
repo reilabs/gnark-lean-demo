@@ -40,5 +40,4 @@ jobs:
     - name: Build lean project
       run: |
         cd lean-circuit
-        ~/.elan/bin/lake exe cache get
         ~/.elan/bin/lake build
