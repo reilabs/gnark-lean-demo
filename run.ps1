@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
 
 go mod download
-go build -v ./...
-.\go-circuit.exe extract-circuit --out=lean-circuit/LeanCircuit.lean
+go build -o gnark-lean-demo.exe -v ./...
+.\gnark-lean-demo.exe extract-circuit --out=lean-circuit/LeanCircuit.lean
