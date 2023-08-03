@@ -10,7 +10,7 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
--- Number of levels
+-- Number of levels in Merkle Tree
 abbrev D := 20
 
 -- Start of misc lemmas
@@ -122,11 +122,13 @@ abbrev identity_commitment (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
 abbrev nullifier_hash (ExternalNullifier: F) (IdentityNullifier: F) : F :=
   poseidon₂ vec![ExternalNullifier, IdentityNullifier]
 
+-- circuit_sem is an implementation of the Semaphore protocol
 def circuit_sem (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F D): Prop :=
     NullifierHash = nullifier_hash ExternalNullifier IdentityNullifier ∧
     is_vector_binary Path ∧
     MerkleTree.recover poseidon₂ (Dir.create_dir_vec Path).reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
 
+-- circuit_semantics proves that the Semaphore circuit exported from gnark-lean-extractor is equivalent to circuit_sem
 theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F D}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
     circuit_sem IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root Path Proof := by
