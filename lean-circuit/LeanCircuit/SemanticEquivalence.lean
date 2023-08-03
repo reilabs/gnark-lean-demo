@@ -51,6 +51,14 @@ lemma embed_dir_vector_is_binary {depth} (ix : Vector Dir depth) :
 
 -- End of misc lemmas
 
+-- The following proofs are needed to verify that Semaphore.circuit is equal to circuit_sem as shown
+-- in the theorem circuit_semantics.
+-- First, we prove that the hash circuit (Poseidon) is correct in lemmas Poseidon1_uncps and Poseidon2_uncps
+-- Second, we prove that the parent hash of the Merkle tree is computed correctly in MerkleTreeRecoverRound_uncps.
+-- Third, by repeatedly applying Semaphore.MerkleTreeRecoverRound, we prove that the computed root is correct
+-- in lemma MerkleTreeInclusionProof_20_20_uncps
+-- Finally, combining all the proofs, we show that Semaphore.circuit is a correct implementation of the Semaphore
+-- circuit as per specification in https://semaphore.appliedzkp.org
 
 def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
 
