@@ -61,7 +61,7 @@ func (gadget MerkleTreeInclusionProof) DefineGadget(api abstractor.API) []fronte
 type Semaphore struct {
 	IdentityNullifier frontend.Variable   `gnark:",secret"`
 	IdentityTrapdoor  frontend.Variable   `gnark:",secret"`
-	TreePathIndices   []frontend.Variable `gnark:",secret"` // 0 | 1
+	TreePathIndices   []frontend.Variable `gnark:",secret"` // Can be 0 (left) | 1 (right)
 	TreeSiblings      []frontend.Variable `gnark:",secret"`
 
 	SignalHash        frontend.Variable `gnark:",public"`
