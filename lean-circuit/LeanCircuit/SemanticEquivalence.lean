@@ -10,7 +10,10 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
+-- Number of levels
 abbrev D := 20
+
+-- Start of misc lemmas
 
 def embed_dir : Dir -> F
   | x => Dir.toZMod x
@@ -45,6 +48,9 @@ lemma embed_dir_vector_is_binary {depth} (ix : Vector Dir depth) :
     apply And.intro
     { simp [embed_dir, is_bit]; cases d <;> simp }
     { assumption }
+
+-- End of misc lemmas
+
 
 def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
 
