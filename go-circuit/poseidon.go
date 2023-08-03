@@ -6,6 +6,9 @@ import (
 	"math/big"
 )
 
+// [Poseidon whitepaper]: https://eprint.iacr.org/2019/458
+// [Poseidon implementation]: https://extgit.iaik.tugraz.at/krypto/hadeshash/-/blob/208b5a164c6a252b137997694d90931b2bb851c5/code/poseidonperm_x5_254_3.sage
+
 func hex(s string) big.Int {
 	var bi big.Int
 	bi.SetString(s, 0)
@@ -531,8 +534,7 @@ func cfgFor(t int) *cfg {
 	panic("Poseidon: unsupported arg count")
 }
 
-// Poseidon1 is the gadget to calculate the Poseidon hash of a single
-// input
+// Poseidon1 is the gadget to calculate the Poseidon hash of a single input
 type Poseidon1 struct {
 	In frontend.Variable
 }
@@ -542,8 +544,7 @@ func (g Poseidon1) DefineGadget(api abstractor.API) []frontend.Variable {
 	return api.Call(poseidon{inp})[:1]
 }
 
-// Poseidon2 is the gadget to calculate the Poseidon hash of two
-// inputs
+// Poseidon2 is the gadget to calculate the Poseidon hash of two inputs
 type Poseidon2 struct {
 	In1, In2 frontend.Variable
 }
