@@ -21,6 +21,41 @@ def embed_dir_vector {depth} (ix: Vector Dir depth) : Vector F depth :=
 lemma dir_embed_recover {d : Dir} : Dir.nat_to_dir (embed_dir d).val = d := by
   cases d <;> rfl
 
+lemma dir_embed_recover' {n : Nat} {d : Dir} [Fact (Nat.Prime n)]: 
+  Dir.nat_to_dir (Dir.toZMod d: ZMod n).val = d := by
+  cases d 
+  case _ => {
+    unfold Dir.toZMod
+    simp
+    unfold Dir.nat_to_dir
+    simp
+  }
+  case _ => {
+    unfold Dir.toZMod
+    simp
+    rename_i h₁
+    unfold ZMod.val
+    have : Nat.Prime n := (inferInstance : Fact (Nat.Prime n)).elim
+    induction n
+    case _ => {
+      simp
+      rfl
+    }
+    case succ ih => {
+      simp
+      rename_i h₂
+      induction h₂
+      case _ => {
+        simp [*] at this
+      }
+      case _ => {
+        simp
+        unfold Dir.nat_to_dir
+        simp
+      }
+    }
+  }
+
 @[simp]
 lemma dir_embed_recover_vector {depth} (ix: Vector Dir depth) :
   Dir.create_dir_vec (embed_dir_vector ix) = ix := by
