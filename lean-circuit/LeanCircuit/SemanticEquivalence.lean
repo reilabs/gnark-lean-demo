@@ -10,14 +10,25 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
--- Number of levels in Merkle Tree
+/-- Number of levels in Merkle Tree -/
 abbrev D := 20
 
--- Start of misc lemmas
+/-!
+These lemmas are used in simp commands to convert between `Vector Dir depth` and
+`Vector F depth`. These lemmas rely on the Order of F (i.e. ZMod) being hardcoded
+which is why they are not kept in the library reilabs/proven-zk.
+-/
 
+/-!
+embed_dir converts from `Dir` to `F`. Can't call `Dir.toZMod` directly because
+dir_embed_recover relies on knowing the value of the Order
+-/
 def embed_dir : Dir -> F
   | x => Dir.toZMod x
 
+/-!
+embed_dir_vector converts from `Vector Dir depth` to `Vector F depth`
+-/
 def embed_dir_vector {depth} (ix: Vector Dir depth) : Vector F depth :=
   Vector.map embed_dir ix
 
@@ -38,6 +49,10 @@ lemma embed_dir_vector_reverse {depth} (ix : Vector Dir depth) :
   apply Vector.eq
   simp [Vector.toList_reverse, List.map_reverse]
 
+/-!
+embed_dir_vector_is_binary proves that Vector Dir are binary vectors when converted from
+`Vector Dir depth` to `Vector F depth` because `Dir` can only be 0 | 1.
+-/
 lemma embed_dir_vector_is_binary {depth} (ix : Vector Dir depth) :
   is_vector_binary (embed_dir_vector ix) := by
   simp [is_vector_binary, embed_dir_vector]
@@ -51,15 +66,16 @@ lemma embed_dir_vector_is_binary {depth} (ix : Vector Dir depth) :
 
 -- End of misc lemmas
 
--- The following proofs are needed to verify that Semaphore.circuit is equal to circuit_sem as shown
--- in the theorem circuit_semantics.
--- First, we prove that the hash circuit (Poseidon) is correct in lemmas Poseidon1_uncps and Poseidon2_uncps
--- Second, we prove that the parent hash of the Merkle tree is computed correctly in MerkleTreeRecoverRound_uncps.
--- Third, by repeatedly applying Semaphore.MerkleTreeRecoverRound, we prove that the computed root is correct
--- in lemma MerkleTreeInclusionProof_20_20_uncps
--- Finally, combining all the proofs, we show that Semaphore.circuit is a correct implementation of the Semaphore
--- circuit as per specification in https://semaphore.appliedzkp.org
-
+/-!
+The following proofs are needed to verify that Semaphore.circuit is equal to circuit_sem as shown
+in the theorem circuit_semantics.
+First, we prove that the hash circuit (Poseidon) is correct in lemmas Poseidon1_uncps and Poseidon2_uncps
+Second, we prove that the parent hash of the Merkle tree is computed correctly in MerkleTreeRecoverRound_uncps.
+Third, by repeatedly applying Semaphore.MerkleTreeRecoverRound, we prove that the computed root is correct
+in lemma MerkleTreeInclusionProof_20_20_uncps
+Finally, combining all the proofs, we show that Semaphore.circuit is a correct implementation of the Semaphore
+circuit as per specification in https://semaphore.appliedzkp.org
+-/
 def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
 
 lemma Poseidon1_uncps (a : F) (k : F -> Prop) : Semaphore.Poseidon1 a k ↔ k (poseidon₁ vec![a]) := by
@@ -130,13 +146,13 @@ abbrev identity_commitment (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
 abbrev nullifier_hash (ExternalNullifier: F) (IdentityNullifier: F) : F :=
   poseidon₂ vec![ExternalNullifier, IdentityNullifier]
 
--- circuit_sem is an implementation of the Semaphore protocol
+/-- circuit_sem is an implementation of the Semaphore protocol -/
 def circuit_sem (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F D): Prop :=
     NullifierHash = nullifier_hash ExternalNullifier IdentityNullifier ∧
     is_vector_binary Path ∧
     MerkleTree.recover poseidon₂ (Dir.create_dir_vec Path).reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root
 
--- circuit_semantics proves that the Semaphore circuit exported from gnark-lean-extractor is equivalent to circuit_sem
+/-- circuit_semantics proves that the Semaphore circuit exported from gnark-lean-extractor is equivalent to circuit_sem -/
 theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F D}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
     circuit_sem IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root Path Proof := by
