@@ -97,7 +97,6 @@ lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F D) (Sibli
       merkle_tree_recover_rounds Leaf PathIndices Siblings k := by
     unfold Semaphore.MerkleTreeInclusionProof_20_20
     simp [merkle_tree_recover_rounds]
-    simp [merkle_tree_recover_rounds]
     rw [←Vector.ofFn_get (v := PathIndices)]
     rw [←Vector.ofFn_get (v := Siblings)]
     rfl
