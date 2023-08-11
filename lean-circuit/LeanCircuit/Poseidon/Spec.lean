@@ -6,6 +6,7 @@ open Matrix
 
 namespace Poseidon
 
+-- Reference [Sage implementation](https://extgit.iaik.tugraz.at/krypto/hadeshash/-/blob/208b5a164c6a252b137997694d90931b2bb851c5/code/poseidonperm_x5_254_3.sage)
 def perm (cfg : Constants) (input_words : Vector cfg.F cfg.t): Vector cfg.F cfg.t := Id.run do
   let R_f := cfg.R_F / 2
   let mut round_constants_counter := 0
