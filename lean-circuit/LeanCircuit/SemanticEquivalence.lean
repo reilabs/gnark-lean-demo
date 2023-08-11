@@ -13,6 +13,8 @@ variable [Fact (Nat.Prime Order)]
 /-- Number of levels in Merkle Tree -/
 abbrev D := 20
 
+-- Start of misc lemmas
+
 /-!
 These lemmas are used in simp commands to convert between `Vector Dir depth` and
 `Vector F depth`. These lemmas rely on the Order of F (i.e. ZMod) being hardcoded
@@ -32,9 +34,17 @@ embed_dir_vector converts from `Vector Dir depth` to `Vector F depth`
 def embed_dir_vector {depth} (ix: Vector Dir depth) : Vector F depth :=
   Vector.map embed_dir ix
 
+/-!
+dir_embed_recover proves that converting from `Dir` to `ZMod` and back to `Dir`,
+returns a value equal to the argument d
+-/
 lemma dir_embed_recover {d : Dir} : Dir.nat_to_dir (embed_dir d).val = d := by
   cases d <;> rfl
 
+/-!
+dir_embed_recover_vector applies the lemma `dir_embed_recover` to a whole vector
+of length depth
+-/
 @[simp]
 lemma dir_embed_recover_vector {depth} (ix: Vector Dir depth) :
   Dir.create_dir_vec (embed_dir_vector ix) = ix := by
@@ -42,9 +52,14 @@ lemma dir_embed_recover_vector {depth} (ix: Vector Dir depth) :
   apply Vector.eq
   simp
 
+/-!
+embed_dir_vector_reverse proves that `embed_dir_vector` and `Vector.reverse`
+are associative i.e. if they are applied to a `Vector Dir`, the order
+of the operations doesn't matter, the result is the same.
+-/
 @[simp]
 lemma embed_dir_vector_reverse {depth} (ix : Vector Dir depth) :
-  embed_dir_vector ix.reverse = (embed_dir_vector ix).reverse := by
+  embed_dir_vector (Vector.reverse ix) = Vector.reverse (embed_dir_vector ix) := by
   simp [embed_dir_vector]
   apply Vector.eq
   simp [Vector.toList_reverse, List.map_reverse]
@@ -74,7 +89,8 @@ Second, we prove that the parent hash of the Merkle tree is computed correctly i
 Third, by repeatedly applying Semaphore.MerkleTreeRecoverRound, we prove that the computed root is correct
 in lemma MerkleTreeInclusionProof_20_20_uncps
 Finally, combining all the proofs, we show that Semaphore.circuit is a correct implementation of the Semaphore
-circuit as per specification in https://semaphore.appliedzkp.org
+circuit as per [specification](https://github.com/semaphore-protocol/semaphore/tree/main/packages/circuits).
+Link to protocol [glossary](https://semaphore.appliedzkp.org/docs/glossary).
 -/
 def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
 
@@ -137,12 +153,24 @@ lemma MerkleTreeInclusionProof_20_20_uncps {Leaf : F} {PathIndices Siblings : Ve
     is_vector_binary PathIndices ∧ k (MerkleTree.recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf) := by
     simp [MerkleTreeInclusionProof_looped, merkle_tree_recover_rounds_uncps]
 
+/-!
+secret is the Poseidon hash of `IdentityNullifier` and `IdentityTrapdoor`
+as per [spec](https://github.com/semaphore-protocol/semaphore/blob/main/packages/circuits/semaphore.circom#L6)
+-/
 abbrev secret (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
   poseidon₂ vec![IdentityNullifier, IdentityTrapdoor]
 
+/-!
+identity_commitment is the Poseidon hash of `secret`
+as per [spec](https://github.com/semaphore-protocol/semaphore/blob/main/packages/circuits/semaphore.circom#L20)
+-/
 abbrev identity_commitment (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
   poseidon₁ vec![(secret IdentityNullifier IdentityTrapdoor)]
 
+/-!
+nullifier_hash is the Poseidon hash of `ExternalNullifier` and `IdentityNullifier`
+as per [spec](https://github.com/semaphore-protocol/semaphore/blob/main/packages/circuits/semaphore.circom#L32)
+-/
 abbrev nullifier_hash (ExternalNullifier: F) (IdentityNullifier: F) : F :=
   poseidon₂ vec![ExternalNullifier, IdentityNullifier]
 
