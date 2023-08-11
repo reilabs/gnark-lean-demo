@@ -94,11 +94,19 @@ Link to protocol [glossary](https://semaphore.appliedzkp.org/docs/glossary).
 -/
 def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
 
+/-!
+Poseidon1_uncps is used to re-write calls to `Semaphore.Poseidon1` in terms of `Poseidon.perm`.
+This is single element Poseidon hash.
+-/
 lemma Poseidon1_uncps (a : F) (k : F -> Prop) : Semaphore.Poseidon1 a k ↔ k (poseidon₁ vec![a]) := by
     simp [Semaphore.Poseidon1, poseidon₁, poseidon_2_correct, getElem]
 
 def poseidon₂ : Hash F 2 := fun a => (Poseidon.perm Constants.x5_254_3 vec![0, a.get 0, a.get 1]).get 0
 
+/-!
+Poseidon1_uncps is used to re-write calls to `Semaphore.Poseidon2` in terms of `Poseidon.perm`.
+This is two elements Poseidon hash.
+-/
 lemma Poseidon2_uncps (a b : F) (k : F -> Prop) : Semaphore.Poseidon2 a b k ↔ k (poseidon₂ vec![a, b]) := by
     simp [Semaphore.Poseidon2, poseidon₂, poseidon_3_correct, getElem]
     rfl
