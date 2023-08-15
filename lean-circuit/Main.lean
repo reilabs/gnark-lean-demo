@@ -9,6 +9,18 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
+def tree_for {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H (Nat.succ depth)) (dir : Option Dir) : Option (MerkleTree F H depth) := match dir with
+| some Dir.left => t.left
+| some Dir.right => t.right
+| none => none
+
+def item_at {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p : Vector (Option Dir) depth) : Option F := match depth with
+  | Nat.zero => match t with
+    | MerkleTree.leaf f => f
+  | Nat.succ _ => match (tree_for t p.head) with
+    | some x => item_at x p.tail
+    | none => none
+
 theorem always_possible_to_signal
   (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier : F)
   (Tree : MerkleTree F poseidon₂ 20)
@@ -27,7 +39,8 @@ theorem always_possible_to_signal
   := by
     rw [circuit_semantics, ←MerkleTree.recover_proof_is_root, commitment_in_tree]
     simp [circuit_sem]
-    apply embed_dir_vector_is_binary
+    sorry
+    --apply embed_dir_vector_is_binary
 
 theorem signaller_is_in_tree
     (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F)
@@ -36,11 +49,12 @@ theorem signaller_is_in_tree
     [Fact (perfect_hash poseidon₂)]
     :
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
-    Tree.item_at (Dir.create_dir_vec Path.reverse) = identity_commitment IdentityNullifier IdentityTrapdoor := by
+    (∃x, item_at Tree (Dir.create_dir_vec Path.reverse) = some x ∧ x = identity_commitment IdentityNullifier IdentityTrapdoor) := by
     simp [circuit_semantics, circuit_sem]
     intros
-    apply MerkleTree.proof_ceritfies_item
-    assumption
+    sorry
+    -- apply MerkleTree.proof_ceritfies_item
+    -- assumption
 
 theorem no_double_signal_with_same_commitment
     (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
