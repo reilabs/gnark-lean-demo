@@ -83,23 +83,27 @@ def MerkleTreeRecoverHash (dir hash sibling: F) : Option F :=
     | Dir.right => some (poseidon₂ vec![sibling, hash])
     | none => none
 
+lemma MerkleTreeRecoverHash_0 (hash sibling: F) :
+  MerkleTreeRecoverHash 0 hash sibling = some (poseidon₂ vec![hash, sibling]) := by rfl
+
+lemma MerkleTreeRecoverHash_1 (hash sibling: F) :
+  MerkleTreeRecoverHash 1 hash sibling = some (poseidon₂ vec![sibling, hash]) := by rfl
+
 @[simp]
 def MerkleTreeRecoverHash_is_some {dir hash sibling: F} :
   (is_bit dir) → (∃y, (MerkleTreeRecoverHash dir hash sibling) = some y) := by
     intros
     rename_i h
-    unfold MerkleTreeRecoverHash
-    --unfold Dir.nat_to_dir at h
-    unfold Dir.nat_to_dir
-    induction ZMod.val dir generalizing h with
-    | zero =>
-      simp
-    | succ x _ =>
-      induction x generalizing h with
-      | zero => simp
-      | succ _ _ =>
-        simp
-        sorry
+    unfold is_bit at h
+    cases h
+    case _ => {
+      subst_vars
+      simp [MerkleTreeRecoverHash_0]
+    }
+    case _ => {
+      subst_vars
+      simp [MerkleTreeRecoverHash_1]
+    }
 
 lemma MerkleTreeRecoverRound_uncps {dir hash sibling : F} {k : F -> Prop}:
     Semaphore.MerkleTreeRecoverRound dir hash sibling k ↔
@@ -127,28 +131,43 @@ def merkle_tree_recover_rounds (Leaf : F) (PathIndices Siblings : Vector F n) (k
 def merkle_tree_recover_rounds_uncps_is_some
   {Leaf : F}
   {PathIndices Siblings : Vector F n}:
-  is_vector_binary PathIndices → (∃x, recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf = some x) := by sorry
+  is_vector_binary PathIndices → (∃x, recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf = some x) := by
+  intros
+  rename_i h
+  sorry
 
 lemma merkle_tree_recover_rounds_uncps
   {Leaf : F}
   {PathIndices Siblings : Vector F n}
   {k : F -> Prop}:
   merkle_tree_recover_rounds Leaf PathIndices Siblings k ↔ is_vector_binary PathIndices ∧
-  (∃x, recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf = some x) ∧ k x := by
-  induction PathIndices, Siblings using Vector.inductionOn₂ generalizing x Leaf with
+  (∃x, recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf = some x ∧ k x)  := by
+  induction PathIndices, Siblings using Vector.inductionOn₂ generalizing Leaf with
   | nil =>
     simp [is_vector_binary]
     unfold merkle_tree_recover_rounds
-    sorry
-    --unfold recover_tail    
-    --simp
-    -- rfl
+    unfold Dir.create_dir_vec
+    simp
+    unfold recover_tail
+    simp
   | @cons n ix sib ixes sibs ih =>    
     simp [*] at ih
     simp [MerkleTree.recover_tail_reverse_equals_recover, MerkleTree.recover_tail, merkle_tree_recover_rounds]
     simp [MerkleTreeRecoverRound_uncps, is_vector_binary_cons, and_assoc, ih]
     intros
-    sorry
+    rename_i h
+    unfold is_bit at h
+    cases h
+    case _ => {
+      subst_vars
+      simp [MerkleTreeRecoverHash_0]
+      unfold Dir.nat_to_dir
+      simp
+      sorry
+    }
+    case _ => {
+      sorry
+    }
 
 lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F D) (Siblings: Vector F D) (k: F -> Prop):
     Semaphore.MerkleTreeInclusionProof_20_20 Leaf PathIndices Siblings k =
@@ -162,10 +181,9 @@ lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F D) (Sibli
 
 lemma MerkleTreeInclusionProof_20_20_uncps {Leaf : F} {PathIndices Siblings : Vector F D} {k : F -> Prop}:
     Semaphore.MerkleTreeInclusionProof_20_20 Leaf PathIndices Siblings k ↔ is_vector_binary PathIndices ∧
-    (∃x, recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf = some x) ∧ k x := by
+    (∃x, recover_tail poseidon₂ (Dir.create_dir_vec PathIndices) Siblings Leaf = some x ∧ k x) := by
     simp [MerkleTreeInclusionProof_looped]
     simp [merkle_tree_recover_rounds_uncps]
-    sorry
 
 abbrev secret (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
   poseidon₂ vec![IdentityNullifier, IdentityTrapdoor]
