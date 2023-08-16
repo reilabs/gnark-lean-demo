@@ -1,6 +1,7 @@
 import ProvenZk.Binary
 import ProvenZk.Hash
 import ProvenZk.Merkle
+import ProvenZk.Ext.Vector
 
 import LeanCircuit
 import LeanCircuit.Poseidon.Spec
@@ -14,6 +15,20 @@ abbrev D := 20
 
 def mcreate_dir_vec {n} {depth} (ix: Vector (ZMod n) depth) : Option (Vector Dir depth) :=
   Vector.mmap (fun x => Dir.nat_to_dir x.val) ix
+
+@[simp]
+def mcreate_dir_vec_cons {n} {depth} {ix: (ZMod n)} {ixes: Vector (ZMod n) depth} :
+  (∃x, mcreate_dir_vec (ix ::ᵥ ixes) = some x) ↔ (∃x, (Dir.nat_to_dir ix.val) = some x ∧ ∃y, mcreate_dir_vec ixes = some y) := by
+  unfold mcreate_dir_vec
+  conv => lhs; unfold Vector.mmap; simp
+
+  sorry
+
+-- def is_vector_binary' {d n} (x : Vector (ZMod n) d) : Prop :=
+--   Vector.foldr (fun a r => is_bit a ∧ r) True x
+
+def dir_some_is_bit {n : Nat} {a : ZMod n} :
+  (∃x, Dir.nat_to_dir (ZMod.val a) = some x) ↔ is_bit a := by sorry
 
 def embed_dir : Dir -> F
   | x => Dir.toZMod x
@@ -114,11 +129,68 @@ def merkle_tree_recover_rounds (Leaf : F) (PathIndices Siblings : Vector F n) (k
 @[simp]
 def merkle_tree_recover_rounds_uncps_is_some
   {Leaf : F}
-  {PathIndices Siblings : Vector F n}:
-  is_vector_binary PathIndices → (∃x, mcreate_dir_vec PathIndices = some x) := by
+  {PathIndices : Vector F n}:
+  is_vector_binary PathIndices ↔ (∃x, mcreate_dir_vec PathIndices = some x) := by
   intros
-  rename_i h
-  sorry
+  induction PathIndices using Vector.inductionOn
+  case h_nil => {
+    unfold mcreate_dir_vec
+    simp
+    tauto
+  }
+  case h_cons ih => {
+    simp [mcreate_dir_vec_cons]
+    apply Iff.intro
+    case mp => {
+      intro
+      apply And.intro
+      case left => {
+        rename_i h
+        simp [is_vector_binary_cons] at h
+        unfold is_bit at h
+        cases h
+        rename_i h₁ h₂
+        cases h₁
+        case inl => {
+          subst_vars
+          simp
+          unfold Dir.nat_to_dir
+          simp
+        }
+        case inr => {
+          subst_vars
+          unfold ZMod.val
+          unfold Dir.nat_to_dir
+          unfold Order
+          simp
+        }
+      }
+      case right => {
+        simp [is_vector_binary_cons, and_assoc, ih] at *
+        rename_i h
+        cases h
+        assumption
+      }
+    }
+    case mpr => {
+      intro
+      simp [is_vector_binary_cons, and_assoc, ih]
+      apply And.intro
+      case left => {
+        rename_i h
+        cases h
+        rename_i h₁ h₂
+        simp [dir_some_is_bit] at h₁
+        assumption
+      }
+      case right => {
+        simp [is_vector_binary_cons, and_assoc, ih] at *
+        rename_i h
+        cases h
+        assumption
+      }
+    }
+  }
 
 lemma merkle_tree_recover_rounds_uncps
   {Leaf : F}
@@ -128,14 +200,38 @@ lemma merkle_tree_recover_rounds_uncps
   (∃x, mcreate_dir_vec PathIndices = some x ∧ k (MerkleTree.recover_tail poseidon₂ x Siblings Leaf)) := by
   induction PathIndices, Siblings using Vector.inductionOn₂ generalizing Leaf with
   | nil =>
+    unfold merkle_tree_recover_rounds
     simp [is_vector_binary]
-    sorry
-    --rfl
+    unfold mcreate_dir_vec
+    simp
+    unfold MerkleTree.recover_tail
+    tauto
   | @cons n ix sib ixes sibs ih =>
     simp [MerkleTree.recover_tail_reverse_equals_recover, MerkleTree.recover_tail, merkle_tree_recover_rounds]
     simp [MerkleTreeRecoverRound_uncps, is_vector_binary_cons, and_assoc, ih]
-    intros
+    intros    
     sorry
+    -- unfold MerkleTreeRecoverHash
+    -- rename_i h
+    -- unfold is_bit at h
+    -- cases h
+    -- case inl => {
+    --   subst_vars
+    --   unfold Dir.nat_to_dir
+    --   unfold ZMod.val
+    --   unfold Order
+    --   simp
+    --   intros
+    --   conv =>
+    --     lhs
+    --     unfold MerkleTree.recover_tail
+    --   conv =>
+    --     rhs
+    --   sorry
+    -- }
+    -- case inr => {
+    --   sorry
+    -- }
     --rfl
 
 lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F D) (Siblings: Vector F D) (k: F -> Prop):
@@ -192,14 +288,11 @@ theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash Externa
       apply And.intro
       {rfl}
       apply And.intro
-      sorry
+      {assumption}
       {
         sorry
-        --assumption
+        -- rfl
       }
-      -- {
-      --   rfl
-      -- }
     case mpr =>
       intro h
       cases h; rename_i h₁ h₂
@@ -211,9 +304,8 @@ theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash Externa
       apply And.intro
       {rfl}
       apply And.intro
-      sorry
+      assumption
       {
         sorry
+        -- rfl
       }
-      -- assumption
-      -- {rfl}

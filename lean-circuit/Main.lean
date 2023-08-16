@@ -9,6 +9,20 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
+def dir_vec_is_dir_reverse {depth : Nat} {ix: Vector Dir depth} :
+  mcreate_dir_vec (Vector.reverse (embed_dir_vector ix)) = some (ix.reverse) := by
+  induction ix using Vector.inductionOn
+  case h_nil => {
+    simp
+  }
+  case h_cons => {
+    rename_i ih
+    rename_i ixes
+    rename_i ix
+    unfold mcreate_dir_vec
+    sorry
+  }
+
 theorem always_possible_to_signal
   (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier : F)
   (Tree : MerkleTree F poseidon₂ 20)
@@ -27,8 +41,14 @@ theorem always_possible_to_signal
   := by
     rw [circuit_semantics, ←MerkleTree.recover_proof_is_root, commitment_in_tree]
     simp [circuit_sem]
-    sorry
-    --apply embed_dir_vector_is_binary
+    apply And.intro
+    case left => {
+      apply embed_dir_vector_is_binary
+    }
+    case right => {
+      rw [dir_vec_is_dir_reverse]
+      simp
+    }
 
 theorem signaller_is_in_tree
     (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F)
