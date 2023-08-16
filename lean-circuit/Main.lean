@@ -9,18 +9,6 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
-def tree_for {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H (Nat.succ depth)) (dir : Option Dir) : Option (MerkleTree F H depth) := match dir with
-| some Dir.left => t.left
-| some Dir.right => t.right
-| none => none
-
-def item_at {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p : Vector (Option Dir) depth) : Option F := match depth with
-  | Nat.zero => match t with
-    | MerkleTree.leaf f => f
-  | Nat.succ _ => match (tree_for t p.head) with
-    | some x => item_at x p.tail
-    | none => none
-
 theorem always_possible_to_signal
   (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier : F)
   (Tree : MerkleTree F poseidon₂ 20)
@@ -49,7 +37,7 @@ theorem signaller_is_in_tree
     [Fact (perfect_hash poseidon₂)]
     :
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
-    (∃x, item_at Tree (Dir.create_dir_vec Path.reverse) = some x ∧ x = identity_commitment IdentityNullifier IdentityTrapdoor) := by
+    (∃x, mcreate_dir_vec Path.reverse = some x ∧ MerkleTree.item_at Tree x = identity_commitment IdentityNullifier IdentityTrapdoor) := by
     simp [circuit_semantics, circuit_sem]
     intros
     sorry
