@@ -16,19 +16,46 @@ abbrev D := 20
 def mcreate_dir_vec {n} {depth} (ix: Vector (ZMod n) depth) : Option (Vector Dir depth) :=
   Vector.mmap (fun x => Dir.nat_to_dir x.val) ix
 
-@[simp]
-def mcreate_dir_vec_cons {n} {depth} {ix: (ZMod n)} {ixes: Vector (ZMod n) depth} :
+def mcreate_dir_vec_cons{n} {depth} {ix: (ZMod n)} {ixes: Vector (ZMod n) depth} :
   (∃x, mcreate_dir_vec (ix ::ᵥ ixes) = some x) ↔ (∃x, (Dir.nat_to_dir ix.val) = some x ∧ ∃y, mcreate_dir_vec ixes = some y) := by
   unfold mcreate_dir_vec
-  conv => lhs; unfold Vector.mmap; simp
-
-  sorry
+  apply Iff.intro
+  case mp => {
+    intro
+    rename_i h
+    simp [Vector.mmap_cons] at *
+    simp
+    simp at h
+    apply And.intro
+    case left => {
+      cases h
+      rename_i h
+      -- How do I get out of the do-notation?
+      sorry
+    }
+    case right => {
+      sorry
+    }
+  }
+  case mpr => {
+    sorry
+  }
 
 -- def is_vector_binary' {d n} (x : Vector (ZMod n) d) : Prop :=
 --   Vector.foldr (fun a r => is_bit a ∧ r) True x
 
+-- theorem dir_left {n : Nat} {a : ZMod n} : Dir.nat_to_dir (ZMod.val a) = some Dir.left ↔ (ZMod.val a) = 0 := by sorry
+-- theorem dir_right {n : Nat} {a : ZMod n} : Dir.nat_to_dir (ZMod.val a) = some Dir.right ↔ (ZMod.val a) = 1 := by sorry
+
 def dir_some_is_bit {n : Nat} {a : ZMod n} :
-  (∃x, Dir.nat_to_dir (ZMod.val a) = some x) ↔ is_bit a := by sorry
+  (∃x, Dir.nat_to_dir (ZMod.val a) = some x) ↔ is_bit a := by
+  apply Iff.intro
+  case mp => {
+    sorry
+  }
+  case mpr => {
+    sorry
+  }
 
 def embed_dir : Dir -> F
   | x => Dir.toZMod x
@@ -209,30 +236,31 @@ lemma merkle_tree_recover_rounds_uncps
   | @cons n ix sib ixes sibs ih =>
     simp [MerkleTree.recover_tail_reverse_equals_recover, MerkleTree.recover_tail, merkle_tree_recover_rounds]
     simp [MerkleTreeRecoverRound_uncps, is_vector_binary_cons, and_assoc, ih]
-    intros    
-    sorry
-    -- unfold MerkleTreeRecoverHash
-    -- rename_i h
-    -- unfold is_bit at h
-    -- cases h
-    -- case inl => {
-    --   subst_vars
-    --   unfold Dir.nat_to_dir
-    --   unfold ZMod.val
-    --   unfold Order
-    --   simp
-    --   intros
-    --   conv =>
-    --     lhs
-    --     unfold MerkleTree.recover_tail
-    --   conv =>
-    --     rhs
-    --   sorry
-    -- }
-    -- case inr => {
-    --   sorry
-    -- }
-    --rfl
+    intros
+    apply Iff.intro
+    case mp => {
+      intro
+      rename_i h
+      cases h
+      rename_i h
+      cases h
+      rename_i h
+      cases h
+      rename_i h
+      cases h
+      rename_i h
+      cases h
+      apply And.intro
+      case left => {
+        assumption
+      }
+      case right => {
+        sorry
+      }
+    }
+    case mpr => {
+      sorry
+    }
 
 lemma MerkleTreeInclusionProof_looped (Leaf: F) (PathIndices: Vector F D) (Siblings: Vector F D) (k: F -> Prop):
     Semaphore.MerkleTreeInclusionProof_20_20 Leaf PathIndices Siblings k =
@@ -264,6 +292,7 @@ def circuit_sem (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierH
     is_vector_binary Path ∧
     (∃x, mcreate_dir_vec Path = some x ∧ MerkleTree.recover poseidon₂ x.reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root)
 
+set_option maxHeartbeats 0
 theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F D}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
     circuit_sem IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root Path Proof := by
@@ -290,8 +319,14 @@ theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash Externa
       apply And.intro
       {assumption}
       {
-        sorry
-        -- rfl
+        rename_i h₁ h₂
+        cases h₂
+        case intro => {
+          apply Exists.intro
+          case h => {
+            assumption
+          }
+        }
       }
     case mpr =>
       intro h
@@ -306,6 +341,11 @@ theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash Externa
       apply And.intro
       assumption
       {
-        sorry
-        -- rfl
+        cases h₃
+        case intro => {
+          apply Exists.intro
+          case h => {
+            assumption
+          }
+        }
       }
