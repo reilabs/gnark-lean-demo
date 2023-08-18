@@ -16,46 +16,50 @@ abbrev D := 20
 def mcreate_dir_vec {n} {depth} (ix: Vector (ZMod n) depth) : Option (Vector Dir depth) :=
   Vector.mmap (fun x => Dir.nat_to_dir x.val) ix
 
+
 def mcreate_dir_vec_cons{n} {depth} {ix: (ZMod n)} {ixes: Vector (ZMod n) depth} :
   (∃x, mcreate_dir_vec (ix ::ᵥ ixes) = some x) ↔ (∃x, (Dir.nat_to_dir ix.val) = some x ∧ ∃y, mcreate_dir_vec ixes = some y) := by
-  unfold mcreate_dir_vec
-  apply Iff.intro
-  case mp => {
-    intro
-    rename_i h
-    simp [Vector.mmap_cons] at *
-    simp
-    simp at h
-    apply And.intro
-    case left => {
-      cases h
-      rename_i h
-      -- How do I get out of the do-notation?
-      sorry
-    }
-    case right => {
-      sorry
-    }
-  }
-  case mpr => {
-    sorry
-  }
+  simp [mcreate_dir_vec, Vector.mmap_cons, Bind.bind]
+  tauto
 
 -- def is_vector_binary' {d n} (x : Vector (ZMod n) d) : Prop :=
 --   Vector.foldr (fun a r => is_bit a ∧ r) True x
 
--- theorem dir_left {n : Nat} {a : ZMod n} : Dir.nat_to_dir (ZMod.val a) = some Dir.left ↔ (ZMod.val a) = 0 := by sorry
--- theorem dir_right {n : Nat} {a : ZMod n} : Dir.nat_to_dir (ZMod.val a) = some Dir.right ↔ (ZMod.val a) = 1 := by sorry
-
-def dir_some_is_bit {n : Nat} {a : ZMod n} :
-  (∃x, Dir.nat_to_dir (ZMod.val a) = some x) ↔ is_bit a := by
+theorem dir_left {n : Nat} {a : F} : Dir.nat_to_dir (ZMod.val a) = some Dir.left ↔ (ZMod.val a) = 0 := by
   apply Iff.intro
   case mp => {
+    intro
+    rename_i h
+    simp [Dir.nat_to_dir] at *
+    
     sorry
   }
   case mpr => {
     sorry
   }
+  
+theorem dir_right {n : Nat} {a : F} : Dir.nat_to_dir (ZMod.val a) = some Dir.right ↔ (ZMod.val a) = 1 := by
+  apply Iff.intro
+  case mp => {
+    intro
+    simp [Dir.nat_to_dir] at *
+    
+    sorry
+  }
+  case mpr => {
+    sorry
+  }
+
+-- def dir_some_is_bit {n : Nat} {a : ZMod n} :
+--   (∃x, Dir.nat_to_dir (ZMod.val a) = some x ↔ is_bit a) := by
+--   sorry
+  -- apply Iff.intro
+  -- case mp => {
+  --   sorry
+  -- }
+  -- case mpr => {
+  --   sorry
+  -- }
 
 def embed_dir : Dir -> F
   | x => Dir.toZMod x
@@ -207,8 +211,31 @@ def merkle_tree_recover_rounds_uncps_is_some
         rename_i h
         cases h
         rename_i h₁ h₂
-        simp [dir_some_is_bit] at h₁
-        assumption
+        cases h₁
+        rename_i h₁
+        rename_i a v D
+        induction D
+        case left => {
+          rw [dir_left] at h₁
+          unfold is_bit
+          simp at h₁
+          apply Or.inl
+          assumption
+          tauto
+        }
+        case right => {
+          rw [dir_right] at h₁
+          unfold is_bit
+          apply Or.inr
+          unfold ZMod.val at h₁
+          unfold Order at h₁
+          simp at h₁
+          unfold F at *
+          --rw [<-ZMod.nat_cast_zmod_val a]
+          rw [<-ZMod.cast_id Order a]
+          sorry
+          sorry
+        }
       }
       case right => {
         simp [is_vector_binary_cons, and_assoc, ih] at *
@@ -292,7 +319,6 @@ def circuit_sem (IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierH
     is_vector_binary Path ∧
     (∃x, mcreate_dir_vec Path = some x ∧ MerkleTree.recover poseidon₂ x.reverse Proof.reverse (identity_commitment IdentityNullifier IdentityTrapdoor) = Root)
 
-set_option maxHeartbeats 0
 theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F} {Path Proof: Vector F D}:
     Semaphore.circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
     circuit_sem IdentityNullifier IdentityTrapdoor ExternalNullifier NullifierHash Root Path Proof := by
