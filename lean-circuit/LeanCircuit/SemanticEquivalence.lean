@@ -13,6 +13,11 @@ variable [Fact (Nat.Prime Order)]
 
 abbrev D := 20
 
+-- def nat_to_dir{n} (x : F) : Option Dir := match x with
+--   | 0 => Option.some Dir.left
+--   | 1 => Option.some Dir.right
+--   | _ => none
+
 def mcreate_dir_vec {n} {depth} (ix: Vector (ZMod n) depth) : Option (Vector Dir depth) :=
   Vector.mmap (fun x => Dir.nat_to_dir x.val) ix
 
@@ -25,30 +30,30 @@ def mcreate_dir_vec_cons{n} {depth} {ix: (ZMod n)} {ixes: Vector (ZMod n) depth}
 -- def is_vector_binary' {d n} (x : Vector (ZMod n) d) : Prop :=
 --   Vector.foldr (fun a r => is_bit a ∧ r) True x
 
-theorem dir_left {n : Nat} {a : F} : Dir.nat_to_dir (ZMod.val a) = some Dir.left ↔ (ZMod.val a) = 0 := by
-  apply Iff.intro
-  case mp => {
-    intro
-    rename_i h
-    simp [Dir.nat_to_dir] at *
+-- theorem dir_left {n : Nat} {a : F} : Dir.nat_to_dir (ZMod.val a) = some Dir.left ↔ (ZMod.val a) = 0 := by
+--   apply Iff.intro
+--   case mp => {
+--     intro
+--     rename_i h
+--     simp [Dir.nat_to_dir] at *
     
-    sorry
-  }
-  case mpr => {
-    sorry
-  }
+--     sorry
+--   }
+--   case mpr => {
+--     sorry
+--   }
   
-theorem dir_right {n : Nat} {a : F} : Dir.nat_to_dir (ZMod.val a) = some Dir.right ↔ (ZMod.val a) = 1 := by
-  apply Iff.intro
-  case mp => {
-    intro
-    simp [Dir.nat_to_dir] at *
+-- theorem dir_right {n : Nat} {a : F} : Dir.nat_to_dir (ZMod.val a) = some Dir.right ↔ (ZMod.val a) = 1 := by
+--   apply Iff.intro
+--   case mp => {
+--     intro
+--     simp [Dir.nat_to_dir] at *
     
-    sorry
-  }
-  case mpr => {
-    sorry
-  }
+--     sorry
+--   }
+--   case mpr => {
+--     sorry
+--   }
 
 -- def dir_some_is_bit {n : Nat} {a : ZMod n} :
 --   (∃x, Dir.nat_to_dir (ZMod.val a) = some x ↔ is_bit a) := by
@@ -157,94 +162,97 @@ def merkle_tree_recover_rounds (Leaf : F) (PathIndices Siblings : Vector F n) (k
   | Nat.succ _ => Semaphore.MerkleTreeRecoverRound PathIndices.head Leaf Siblings.head fun next =>
     merkle_tree_recover_rounds next PathIndices.tail Siblings.tail k
 
-@[simp]
-def merkle_tree_recover_rounds_uncps_is_some
-  {Leaf : F}
-  {PathIndices : Vector F n}:
-  is_vector_binary PathIndices ↔ (∃x, mcreate_dir_vec PathIndices = some x) := by
-  intros
-  induction PathIndices using Vector.inductionOn
-  case h_nil => {
-    unfold mcreate_dir_vec
-    simp
-    tauto
-  }
-  case h_cons ih => {
-    simp [mcreate_dir_vec_cons]
-    apply Iff.intro
-    case mp => {
-      intro
-      apply And.intro
-      case left => {
-        rename_i h
-        simp [is_vector_binary_cons] at h
-        unfold is_bit at h
-        cases h
-        rename_i h₁ h₂
-        cases h₁
-        case inl => {
-          subst_vars
-          simp
-          unfold Dir.nat_to_dir
-          simp
-        }
-        case inr => {
-          subst_vars
-          unfold ZMod.val
-          unfold Dir.nat_to_dir
-          unfold Order
-          simp
-        }
-      }
-      case right => {
-        simp [is_vector_binary_cons, and_assoc, ih] at *
-        rename_i h
-        cases h
-        assumption
-      }
-    }
-    case mpr => {
-      intro
-      simp [is_vector_binary_cons, and_assoc, ih]
-      apply And.intro
-      case left => {
-        rename_i h
-        cases h
-        rename_i h₁ h₂
-        cases h₁
-        rename_i h₁
-        rename_i a v D
-        induction D
-        case left => {
-          rw [dir_left] at h₁
-          unfold is_bit
-          simp at h₁
-          apply Or.inl
-          assumption
-          tauto
-        }
-        case right => {
-          rw [dir_right] at h₁
-          unfold is_bit
-          apply Or.inr
-          unfold ZMod.val at h₁
-          unfold Order at h₁
-          simp at h₁
-          unfold F at *
-          --rw [<-ZMod.nat_cast_zmod_val a]
-          rw [<-ZMod.cast_id Order a]
-          sorry
-          sorry
-        }
-      }
-      case right => {
-        simp [is_vector_binary_cons, and_assoc, ih] at *
-        rename_i h
-        cases h
-        assumption
-      }
-    }
-  }
+-- @[simp]
+-- -- is_vector_binary checks for is_bit across the vector
+-- def merkle_tree_recover_rounds_uncps_is_some
+--   {Leaf : F}
+--   {PathIndices : Vector F n}:
+--   is_vector_binary PathIndices ↔ (∃x, mcreate_dir_vec PathIndices = some x) := by
+--   intros
+--   induction PathIndices using Vector.inductionOn
+--   case h_nil => {
+--     unfold mcreate_dir_vec
+--     simp
+--     tauto
+--   }
+--   case h_cons ih => {
+--     simp [mcreate_dir_vec_cons]
+--     apply Iff.intro
+--     case mp => {
+--       intro
+--       apply And.intro
+--       case left => {
+--         rename_i h
+--         simp [is_vector_binary_cons] at h
+--         unfold is_bit at h
+--         cases h
+--         rename_i h₁ h₂
+--         cases h₁
+--         case inl => {
+--           subst_vars
+--           simp
+--           unfold Dir.nat_to_dir
+--           simp
+--         }
+--         case inr => {
+--           subst_vars
+--           unfold ZMod.val
+--           unfold Dir.nat_to_dir
+--           unfold Order
+--           simp
+--         }
+--       }
+--       case right => {
+--         simp [is_vector_binary_cons, and_assoc, ih] at *
+--         rename_i h
+--         cases h
+--         assumption
+--       }
+--     }
+--     case mpr => {
+--       intro
+--       simp [is_vector_binary_cons, and_assoc, ih]
+--       apply And.intro
+--       case left => {
+--         rename_i h
+--         cases h
+--         rename_i h₁ h₂
+--         cases h₁
+--         rename_i h₁
+--         rename_i a v D
+--         induction D
+--         case left => {
+--           rw [dir_left] at h₁
+--           unfold is_bit
+--           simp at h₁
+--           apply Or.inl
+--           assumption
+--           tauto
+--         }
+--         case right => {
+--           rw [dir_right] at h₁
+--           unfold is_bit
+--           apply Or.inr
+
+--           unfold ZMod.val at h₁
+--           unfold Order at h₁
+--           simp at h₁
+--           unfold F at *
+--           --rw [<-ZMod.nat_cast_zmod_val a]
+--           --rw [<-ZMod.cast_id Order a]
+--           -- This can't be proven
+--           sorry
+--           sorry
+--         }
+--       }
+--       case right => {
+--         simp [is_vector_binary_cons, and_assoc, ih] at *
+--         rename_i h
+--         cases h
+--         assumption
+--       }
+--     }
+--   }
 
 lemma merkle_tree_recover_rounds_uncps
   {Leaf : F}
@@ -375,3 +383,39 @@ theorem circuit_semantics {IdentityNullifier IdentityTrapdoor SignalHash Externa
           }
         }
       }
+
+
+theorem is_bit_same {a : ZMod n} [Fact (Nat.Prime n)] : is_bit a ↔ Gates.is_bool a := by
+  simp [is_bit, Gates.is_bool]
+
+-- `is_bit a` is necessary to satisfy `Gates.is_bool`
+theorem is_bit_dir {a : F} : Gates.is_bool a ↔ is_bit a ∧ (∃x, Dir.nat_to_dir a.val = some x) := by
+  apply Iff.intro
+  case mp => {
+    unfold Gates.is_bool
+    intro
+    rename_i h
+    cases h
+    case inl => {
+      subst_vars
+      unfold Dir.nat_to_dir
+      unfold is_bit
+      simp
+    }
+    case inr => {
+      subst_vars
+      unfold Dir.nat_to_dir
+      unfold is_bit
+      unfold ZMod.val
+      unfold Order
+      simp
+    }
+  }
+  case mpr => {
+    simp only [Gates.is_bool]
+    intros
+    rename_i h
+    cases h
+    unfold is_bit at *
+    assumption
+  }

@@ -9,8 +9,12 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
-def dir_vec_is_dir_reverse {depth : Nat} {ix: Vector Dir depth} :
-  mcreate_dir_vec (Vector.reverse (embed_dir_vector ix)) = some (ix.reverse) := by
+theorem embed_dir_vector_cons {depth} {ix: Dir} {ixes: Vector Dir depth} :
+  (embed_dir_vector (ix ::ᵥ ixes)) = (embed_dir ix) ::ᵥ (embed_dir_vector ixes) := by
+    conv => lhs; unfold embed_dir_vector; unfold Vector.map
+
+def dir_vec_is_dir {depth : Nat} {ix: Vector Dir depth} :
+  mcreate_dir_vec (embed_dir_vector ix) = some ix := by
   induction ix using Vector.inductionOn
   case h_nil => {
     simp
@@ -19,9 +23,29 @@ def dir_vec_is_dir_reverse {depth : Nat} {ix: Vector Dir depth} :
     rename_i ih
     rename_i ixes
     rename_i ix
-    unfold mcreate_dir_vec
-    sorry
+    cases ix
+    case left => {
+      simp [embed_dir_vector_cons]
+      unfold embed_dir
+      unfold Dir.toZMod
+      simp
+      simp [mcreate_dir_vec, Vector.mmap_cons, Bind.bind]
+      tauto
+    }
+    case right => {
+      simp [embed_dir_vector_cons]
+      unfold embed_dir
+      unfold Dir.toZMod
+      simp
+      simp [mcreate_dir_vec, Vector.mmap_cons, Bind.bind]
+      tauto
+    }
   }
+
+def dir_vec_is_dir_reverse {depth : Nat} {ix: Vector Dir depth} :
+  mcreate_dir_vec (Vector.reverse (embed_dir_vector ix)) = some (ix.reverse) := by
+  rw [<-embed_dir_vector_reverse]
+  simp only [dir_vec_is_dir]
 
 theorem always_possible_to_signal
   (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier : F)
