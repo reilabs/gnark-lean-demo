@@ -9,44 +9,6 @@ open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
 
-theorem embed_dir_vector_cons {depth} {ix: Dir} {ixes: Vector Dir depth} :
-  (embed_dir_vector (ix ::ᵥ ixes)) = (embed_dir ix) ::ᵥ (embed_dir_vector ixes) := by
-    conv => lhs; unfold embed_dir_vector; unfold Vector.map
-
-def dir_vec_is_dir {depth : Nat} {ix: Vector Dir depth} :
-  mcreate_dir_vec (embed_dir_vector ix) = some ix := by
-  induction ix using Vector.inductionOn
-  case h_nil => {
-    simp
-  }
-  case h_cons => {
-    rename_i ih
-    rename_i ixes
-    rename_i ix
-    cases ix
-    case left => {
-      simp [embed_dir_vector_cons]
-      unfold embed_dir
-      unfold Dir.toZMod
-      simp
-      simp [mcreate_dir_vec, Vector.mmap_cons, Bind.bind]
-      tauto
-    }
-    case right => {
-      simp [embed_dir_vector_cons]
-      unfold embed_dir
-      unfold Dir.toZMod
-      simp
-      simp [mcreate_dir_vec, Vector.mmap_cons, Bind.bind]
-      tauto
-    }
-  }
-
-def dir_vec_is_dir_reverse {depth : Nat} {ix: Vector Dir depth} :
-  mcreate_dir_vec (Vector.reverse (embed_dir_vector ix)) = some (ix.reverse) := by
-  rw [<-embed_dir_vector_reverse]
-  simp only [dir_vec_is_dir]
-
 theorem always_possible_to_signal
   (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier : F)
   (Tree : MerkleTree F poseidon₂ 20)
@@ -84,9 +46,17 @@ theorem signaller_is_in_tree
     (∃x, mcreate_dir_vec Path.reverse = some x ∧ MerkleTree.item_at Tree x = identity_commitment IdentityNullifier IdentityTrapdoor) := by
     simp [circuit_semantics, circuit_sem]
     intros
-    sorry
-    -- apply MerkleTree.proof_ceritfies_item
-    -- assumption
+    apply Exists.intro
+    apply And.intro
+    case left => {
+      rw [mcreate_dir_vec_reverse]
+      tauto
+      assumption
+    }
+    case right => {
+      apply MerkleTree.proof_ceritfies_item
+      assumption
+    }
 
 theorem no_double_signal_with_same_commitment
     (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
