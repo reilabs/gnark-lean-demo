@@ -6,6 +6,9 @@ import (
 	"math/big"
 )
 
+// [Poseidon whitepaper]: https://eprint.iacr.org/2019/458
+// [Poseidon implementation]: https://extgit.iaik.tugraz.at/krypto/hadeshash/-/blob/208b5a164c6a252b137997694d90931b2bb851c5/code/poseidonperm_x5_254_3.sage
+
 func hex(s string) big.Int {
 	var bi big.Int
 	bi.SetString(s, 0)
@@ -531,6 +534,7 @@ func cfgFor(t int) *cfg {
 	panic("Poseidon: unsupported arg count")
 }
 
+// Poseidon1 is the gadget to calculate the Poseidon hash of a single input
 type Poseidon1 struct {
 	In frontend.Variable
 }
@@ -540,6 +544,7 @@ func (g Poseidon1) DefineGadget(api abstractor.API) []frontend.Variable {
 	return api.Call(poseidon{inp})[:1]
 }
 
+// Poseidon2 is the gadget to calculate the Poseidon hash of two inputs
 type Poseidon2 struct {
 	In1, In2 frontend.Variable
 }
@@ -556,13 +561,13 @@ type poseidon struct {
 func (g poseidon) DefineGadget(api abstractor.API) []frontend.Variable {
 	state := g.Inputs
 	cfg := cfgFor(len(state))
-	for i := 0; i < cfg.RF/2; i += 1 {
+	for i := 0; i < cfg.RF/2; i++ {
 		state = api.Call(fullRound{state, cfg.constants[i]})
 	}
-	for i := 0; i < cfg.RP; i += 1 {
+	for i := 0; i < cfg.RP; i++ {
 		state = api.Call(halfRound{state, cfg.constants[cfg.RF/2+i]})
 	}
-	for i := 0; i < cfg.RF/2; i += 1 {
+	for i := 0; i < cfg.RF/2; i++ {
 		state = api.Call(fullRound{state, cfg.constants[cfg.RF/2+cfg.RP+i]})
 	}
 	return state
@@ -586,9 +591,9 @@ type mds struct {
 func (m mds) DefineGadget(api abstractor.API) []frontend.Variable {
 	var mds = make([]frontend.Variable, len(m.Inp))
 	cfg := cfgFor(len(m.Inp))
-	for i := 0; i < len(m.Inp); i += 1 {
-		var sum frontend.Variable = 0
-		for j := 0; j < len(m.Inp); j += 1 {
+	for i := 0; i < len(m.Inp); i++ {
+		var sum frontend.Variable
+		for j := 0; j < len(m.Inp); j++ {
 			sum = api.Add(sum, api.Mul(m.Inp[j], cfg.mds[i][j]))
 		}
 		mds[i] = sum
@@ -602,7 +607,7 @@ type halfRound struct {
 }
 
 func (h halfRound) DefineGadget(api abstractor.API) []frontend.Variable {
-	for i := 0; i < len(h.Inp); i += 1 {
+	for i := 0; i < len(h.Inp); i++ {
 		h.Inp[i] = api.Add(h.Inp[i], h.Consts[i])
 	}
 	h.Inp[0] = api.Call(sbox{h.Inp[0]})[0]
@@ -615,10 +620,10 @@ type fullRound struct {
 }
 
 func (h fullRound) DefineGadget(api abstractor.API) []frontend.Variable {
-	for i := 0; i < len(h.Inp); i += 1 {
+	for i := 0; i < len(h.Inp); i++ {
 		h.Inp[i] = api.Add(h.Inp[i], h.Consts[i])
 	}
-	for i := 0; i < len(h.Inp); i += 1 {
+	for i := 0; i < len(h.Inp); i++ {
 		h.Inp[i] = api.Call(sbox{h.Inp[i]})[0]
 	}
 	return api.Call(mds{h.Inp})
