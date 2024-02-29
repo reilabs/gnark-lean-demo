@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/reilabs/gnark-lean-extractor/abstractor"
-	"github.com/reilabs/gnark-lean-extractor/extractor"
+	"github.com/reilabs/gnark-lean-extractor/v2/abstractor"
+	"github.com/reilabs/gnark-lean-extractor/v2/extractor"
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/frontend"
@@ -20,10 +20,10 @@ type MerkleTreeRecoverRound struct {
 	Sibling   frontend.Variable
 }
 
-func (gadget MerkleTreeRecoverRound) DefineGadget(api abstractor.API) []frontend.Variable {
+func (gadget MerkleTreeRecoverRound) DefineGadget(api frontend.API) interface{} {
 	api.AssertIsBoolean(gadget.Direction)
-	leftHash := api.Call(Poseidon2{gadget.Hash, gadget.Sibling})[0]
-	rightHash := api.Call(Poseidon2{gadget.Sibling, gadget.Hash})[0]
+	leftHash := abstractor.Call(api, Poseidon2{gadget.Hash, gadget.Sibling})
+	rightHash := abstractor.Call(api, Poseidon2{gadget.Sibling, gadget.Hash})
 	parent_hash := api.Select(gadget.Direction, rightHash, leftHash)
 	return []frontend.Variable{parent_hash}
 }
@@ -34,13 +34,13 @@ type MerkleTreeInclusionProof struct {
 	Siblings    []frontend.Variable
 }
 
-func (gadget MerkleTreeInclusionProof) DefineGadget(api abstractor.API) []frontend.Variable {
+func (gadget MerkleTreeInclusionProof) DefineGadget(api frontend.API) interface{} {
 	levels := len(gadget.PathIndices)
 	hashes := make([]frontend.Variable, levels+1)
 
 	hashes[0] = gadget.Leaf
 	for i := 0; i < levels; i++ {
-		hashes[i+1] = api.Call(MerkleTreeRecoverRound{gadget.PathIndices[i], hashes[i], gadget.Siblings[i]})[0]
+		hashes[i+1] = abstractor.Call(api, MerkleTreeRecoverRound{gadget.PathIndices[i], hashes[i], gadget.Siblings[i]})
 	}
 	root := hashes[levels]
 	return []frontend.Variable{root}
@@ -63,28 +63,24 @@ type Semaphore struct {
 	Levels int
 }
 
-func (circuit *Semaphore) AbsDefine(api abstractor.API) error {
+func (circuit *Semaphore) Define(api frontend.API) error {
 	// From https://github.com/semaphore-protocol/semaphore/blob/main/packages/circuits/semaphore.circom
 
-	secret := api.Call(Poseidon2{circuit.IdentityNullifier, circuit.IdentityTrapdoor})[0]
-	identity_commitment := api.Call(Poseidon1{secret})[0]
-	nullifierHash := api.Call(Poseidon2{circuit.ExternalNullifier, circuit.IdentityNullifier})[0]
+	secret := abstractor.Call(api, Poseidon2{circuit.IdentityNullifier, circuit.IdentityTrapdoor})
+	identity_commitment := abstractor.Call(api, Poseidon1{secret})
+	nullifierHash := abstractor.Call(api, Poseidon2{circuit.ExternalNullifier, circuit.IdentityNullifier})
 	api.AssertIsEqual(nullifierHash, circuit.NullifierHash) // Verify
 
-	root := api.Call(MerkleTreeInclusionProof{
+	root := abstractor.Call(api, MerkleTreeInclusionProof{
 		Leaf:        identity_commitment,
 		PathIndices: circuit.TreePathIndices,
 		Siblings:    circuit.TreeSiblings,
-	})[0]
+	})
 
 	api.AssertIsEqual(root, circuit.MTRoot) // Verify
 	api.Mul(circuit.SignalHash, circuit.SignalHash)
 
 	return nil
-}
-
-func (circuit Semaphore) Define(api frontend.API) error {
-	return abstractor.Concretize(api, &circuit)
 }
 
 func TestSemaphore() (string, error) {
