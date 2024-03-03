@@ -4,59 +4,10 @@ import ProvenZk.Merkle
 
 import LeanCircuit
 import LeanCircuit.Poseidon
--- import LeanCircuit.Poseidon.Spec
--- import LeanCircuit.Poseidon.Correctness
 
 open Semaphore (F Order)
 
 variable [Fact (Nat.Prime Order)]
-
--- abbrev D := 20
-
--- def embed_dir : Dir -> F
---   | x => Dir.toZMod x
-
--- def embed_dir_vector {depth} (ix: Vector Dir depth) : Vector F depth :=
---   Vector.map embed_dir ix
-
--- lemma dir_embed_recover {d : Dir} : Dir.nat_to_dir (embed_dir d).val = d := by
---   cases d <;> rfl
-
--- @[simp]
--- lemma dir_embed_recover_vector {depth} (ix: Vector Dir depth) :
---   Dir.create_dir_vec (embed_dir_vector ix) = ix := by
---   simp [Dir.create_dir_vec, embed_dir_vector, dir_embed_recover]
---   apply Vector.eq
---   simp
-
--- @[simp]
--- lemma embed_dir_vector_reverse {depth} (ix : Vector Dir depth) :
---   embed_dir_vector ix.reverse = (embed_dir_vector ix).reverse := by
---   simp [embed_dir_vector]
---   apply Vector.eq
---   simp [Vector.toList_reverse, List.map_reverse]
-
--- lemma embed_dir_vector_is_binary {depth} (ix : Vector Dir depth) :
---   is_vector_binary (embed_dir_vector ix) := by
---   simp [is_vector_binary, embed_dir_vector]
---   induction ix using Vector.inductionOn with
---   | h_nil => simp [is_vector_binary]
---   | @h_cons n d ds ih =>
---     simp [is_vector_binary_cons]
---     apply And.intro
---     { simp [embed_dir, is_bit]; cases d <;> simp }
---     { assumption }
-
--- def poseidon₁ : Hash F 1 := fun a => (Poseidon.perm Constants.x5_254_2 vec![0, a.get 0]).get 0
-
--- lemma Poseidon1_uncps (a : F) (k : F -> Prop) : Semaphore.Poseidon1 a k ↔ k (poseidon₁ vec![a]) := by
---     simp [Semaphore.Poseidon1, poseidon₁, poseidon_2_correct, getElem]
-
--- def poseidon₂ : Hash F 2 := fun a => (Poseidon.perm Constants.x5_254_3 vec![0, a.get 0, a.get 1]).get 0
-
--- lemma Poseidon2_uncps (a b : F) (k : F -> Prop) : Semaphore.Poseidon2 a b k ↔ k (poseidon₂ vec![a, b]) := by
---     simp [Semaphore.Poseidon2, poseidon₂, poseidon_3_correct, getElem]
---     rfl
 
 def hashLevel (d : Bool) (h s : F): F := match d with
   | false => poseidon₂ (vec![h, s])
